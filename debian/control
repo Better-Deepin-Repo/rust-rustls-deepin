@@ -39,10 +39,9 @@ Build-Depends:
  librust-subtle-2-dev,
  librust-tikv-jemallocator-0.6+default-dev,
  librust-time-0.3-dev,
- librust-x509-parser-0.17+default-dev,
  librust-zeroize-1+default-dev,
 Maintainer: Jonas Smedegaard <dr@jones.dk>
-Standards-Version: 4.7.2
+Standards-Version: 4.7.0
 Vcs-Git: https://salsa.debian.org/debian/rust-rustls.git
 Vcs-Browser: https://salsa.debian.org/debian/rust-rustls
 Homepage: https://github.com/rustls/rustls
@@ -76,7 +75,7 @@ Provides:
  librust-rustls-0.23+std-dev (= ${binary:Version}),
  librust-rustls-0.23+tls12-dev (= ${binary:Version}),
  librust-rustls-0.23-dev (= ${binary:Version}),
- librust-rustls-0.23.25-dev (= ${binary:Version}),
+ librust-rustls-0.23.20-dev (= ${binary:Version}),
 Description: modern TLS library written in Rust - Rust source code
  Rustls is a modern TLS library written in Rust.
  It uses ring for cryptography

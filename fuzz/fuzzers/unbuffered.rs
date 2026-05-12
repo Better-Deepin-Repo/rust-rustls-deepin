@@ -3,13 +3,14 @@
 extern crate libfuzzer_sys;
 extern crate rustls;
 
+use std::sync::Arc;
+
 use rustls::client::UnbufferedClientConnection;
-use rustls::server::UnbufferedServerConnection;
+use rustls::server::{ResolvesServerCert, UnbufferedServerConnection};
 use rustls::unbuffered::{ConnectionState, UnbufferedStatus};
-use rustls::{ClientConfig, ServerConfig, SideData};
+use rustls::{ClientConfig, RootCertStore, ServerConfig, SideData};
 
 fuzz_target!(|data: &[u8]| {
-    let _ = env_logger::try_init();
     let mut data = data.to_vec();
     match data.split_first_mut() {
         Some((0x00, rest)) => client(rest),
@@ -19,11 +20,8 @@ fuzz_target!(|data: &[u8]| {
 });
 
 fn client(data: &mut [u8]) {
-    let config = ClientConfig::builder_with_provider(rustls_fuzzing_provider::provider().into())
-        .with_safe_default_protocol_versions()
-        .unwrap()
-        .dangerous()
-        .with_custom_certificate_verifier(rustls_fuzzing_provider::server_verifier())
+    let config = ClientConfig::builder()
+        .with_root_certificates(RootCertStore::empty())
         .with_no_client_auth();
     let conn =
         UnbufferedClientConnection::new(config.into(), "localhost".try_into().unwrap()).unwrap();
@@ -31,11 +29,9 @@ fn client(data: &mut [u8]) {
 }
 
 fn server(data: &mut [u8]) {
-    let config = ServerConfig::builder_with_provider(rustls_fuzzing_provider::provider().into())
-        .with_safe_default_protocol_versions()
-        .unwrap()
+    let config = ServerConfig::builder()
         .with_no_client_auth()
-        .with_cert_resolver(rustls_fuzzing_provider::server_cert_resolver());
+        .with_cert_resolver(Arc::new(NoServerCert));
     let conn = UnbufferedServerConnection::new(config.into()).unwrap();
     fuzz_unbuffered(data, ClientServer::Server(conn));
 }
@@ -72,14 +68,21 @@ fn process<S: SideData>(status: UnbufferedStatus<'_, '_, S>) -> Option<usize> {
         Ok(ConnectionState::TransmitTlsData(xmit)) => xmit.done(),
         Ok(ConnectionState::WriteTraffic(_)) => return None,
         Ok(ConnectionState::BlockedHandshake) => return None,
-        Ok(ConnectionState::ReadTraffic(mut read)) => loop {
-            let Some(_app_data) = read.next_record() else {
-                break;
-            };
-        },
         Ok(st) => panic!("unhandled state {st:?}"),
         Err(_) => return None,
     };
 
     Some(discard)
+}
+
+#[derive(Debug)]
+struct NoServerCert;
+
+impl ResolvesServerCert for NoServerCert {
+    fn resolve(
+        &self,
+        _client_hello: rustls::server::ClientHello,
+    ) -> Option<Arc<rustls::sign::CertifiedKey>> {
+        None
+    }
 }

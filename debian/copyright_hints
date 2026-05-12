@@ -66,9 +66,7 @@ Files: BENCHMARKING.md
  debian/patches/2002_hashbrown.patch
  debian/patches/2002_hickory-resolver.patch
  debian/patches/2002_hpke-rs.patch
- debian/patches/2002_itertools.patch
  debian/patches/2002_macro_rules_attribute.patch
- debian/patches/2002_rustls-webpki.patch
  debian/patches/2002_zlib-rs.patch
  debian/patches/2003_network_access.patch
  debian/patches/2004_no_feature_read_buf.patch
@@ -606,10 +604,8 @@ Files: BENCHMARKING.md
  fuzz/corpus/server/accepter-tls13-client.bin
  fuzz/corpus/server/buffered-tls12-client.bin
  fuzz/corpus/server/buffered-tls13-client.bin
- fuzz/corpus/unbuffered/tls12-client.bin
- fuzz/corpus/unbuffered/tls12-server.bin
- fuzz/corpus/unbuffered/tls13-client.bin
- fuzz/corpus/unbuffered/tls13-server.bin
+ fuzz/corpus/unbuffered/server-tls12.bin
+ fuzz/corpus/unbuffered/server-tls13.bin
  fuzz/fuzzers/client.rs
  fuzz/fuzzers/deframer.rs
  fuzz/fuzzers/fragment.rs
@@ -638,15 +634,13 @@ Files: BENCHMARKING.md
  provider-example/src/verify.rs
  rustls-bench/Cargo.toml
  rustls-bench/src/main.rs
- rustls-fuzzing-provider/Cargo.toml
- rustls-fuzzing-provider/src/lib.rs
- rustls-fuzzing-provider/tests/smoke.rs
+ rustls-post-quantum/Cargo.lock
  rustls-post-quantum/Cargo.toml
  rustls-post-quantum/README.md
- rustls-post-quantum/README.tpl
- rustls-post-quantum/benches/benchmarks.rs
  rustls-post-quantum/examples/client.rs
+ rustls-post-quantum/src/hybrid.rs
  rustls-post-quantum/src/lib.rs
+ rustls-post-quantum/src/mlkem.rs
  rustls-provider-test/Cargo.toml
  rustls-provider-test/README.md
  rustls-provider-test/tests/hpke.rs
@@ -671,9 +665,6 @@ Files: BENCHMARKING.md
  rustls/src/conn/unbuffered.rs
  rustls/src/crypto/aws_lc_rs/hpke.rs
  rustls/src/crypto/aws_lc_rs/mod.rs
- rustls/src/crypto/aws_lc_rs/pq/hybrid.rs
- rustls/src/crypto/aws_lc_rs/pq/mlkem.rs
- rustls/src/crypto/aws_lc_rs/pq/mod.rs
  rustls/src/crypto/aws_lc_rs/sign.rs
  rustls/src/crypto/aws_lc_rs/ticketer.rs
  rustls/src/crypto/aws_lc_rs/tls12.rs

@@ -1,5 +1,6 @@
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 
 use pki_types::DnsName;
@@ -7,7 +8,9 @@ use pki_types::DnsName;
 use super::server_conn::ServerConnectionData;
 #[cfg(feature = "tls12")]
 use super::tls12;
-use crate::common_state::{KxState, Protocol, State};
+use crate::common_state::{
+    KxState, Protocol, RawKeyNegotationResult, RawKeyNegotiationParams, State,
+};
 use crate::conn::ConnectionRandoms;
 use crate::crypto::SupportedKxGroup;
 use crate::enums::{
@@ -27,9 +30,8 @@ use crate::msgs::handshake::{
 use crate::msgs::message::{Message, MessagePayload};
 use crate::msgs::persist;
 use crate::server::common::ActiveCertifiedKey;
-use crate::server::{ClientHello, ServerConfig, tls13};
-use crate::sync::Arc;
-use crate::{SupportedCipherSuite, suites};
+use crate::server::{tls13, ClientHello, ServerConfig};
+use crate::{suites, SupportedCipherSuite};
 
 pub(super) type NextState<'a> = Box<dyn State<ServerConnectionData> + 'a>;
 pub(super) type NextStateOrError<'a> = Result<NextState<'a>, Error>;
@@ -92,7 +94,7 @@ impl ExtensionProcessing {
                 .iter()
                 .find(|protocol| their_protocols.contains(&protocol.as_slice()))
                 .cloned();
-            if let Some(selected_protocol) = &cx.common.alpn_protocol {
+            if let Some(ref selected_protocol) = cx.common.alpn_protocol {
                 debug!("Chosen ALPN protocol {:?}", selected_protocol);
                 self.exts
                     .push(ServerExtension::make_alpn(&[selected_protocol]));
@@ -211,17 +213,22 @@ impl ExtensionProcessing {
         config: &ServerConfig,
         cx: &mut ServerContext<'_>,
     ) -> Result<(), Error> {
-        let client_supports = hello
+        let requires_server_rpk = config
+            .cert_resolver
+            .only_raw_public_keys();
+        let client_allows_rpk = hello
             .server_certificate_extension()
-            .map(|certificate_types| certificate_types.to_vec())
-            .unwrap_or_default();
+            .map(|certificate_types| certificate_types.contains(&CertificateType::RawPublicKey))
+            .unwrap_or(false);
+
+        let raw_key_negotation_params = RawKeyNegotiationParams {
+            peer_supports_raw_key: client_allows_rpk,
+            local_expects_raw_key: requires_server_rpk,
+            extension_type: ExtensionType::ServerCertificateType,
+        };
 
         self.process_cert_type_extension(
-            client_supports,
-            config
-                .cert_resolver
-                .only_raw_public_keys(),
-            ExtensionType::ServerCertificateType,
+            raw_key_negotation_params.validate_raw_key_negotiation(),
             cx,
         )
     }
@@ -232,63 +239,52 @@ impl ExtensionProcessing {
         config: &ServerConfig,
         cx: &mut ServerContext<'_>,
     ) -> Result<(), Error> {
-        let client_supports = hello
+        let requires_client_rpk = config
+            .verifier
+            .requires_raw_public_keys();
+        let client_offers_rpk = hello
             .client_certificate_extension()
-            .map(|certificate_types| certificate_types.to_vec())
-            .unwrap_or_default();
+            .map(|certificate_types| certificate_types.contains(&CertificateType::RawPublicKey))
+            .unwrap_or(false);
 
+        let raw_key_negotation_params = RawKeyNegotiationParams {
+            peer_supports_raw_key: client_offers_rpk,
+            local_expects_raw_key: requires_client_rpk,
+            extension_type: ExtensionType::ClientCertificateType,
+        };
         self.process_cert_type_extension(
-            client_supports,
-            config
-                .verifier
-                .requires_raw_public_keys(),
-            ExtensionType::ClientCertificateType,
+            raw_key_negotation_params.validate_raw_key_negotiation(),
             cx,
         )
     }
 
     fn process_cert_type_extension(
         &mut self,
-        client_supports: Vec<CertificateType>,
-        requires_raw_keys: bool,
-        extension_type: ExtensionType,
+        raw_key_negotiation_result: RawKeyNegotationResult,
         cx: &mut ServerContext<'_>,
     ) -> Result<(), Error> {
-        debug_assert!(
-            extension_type == ExtensionType::ClientCertificateType
-                || extension_type == ExtensionType::ServerCertificateType
-        );
-        let raw_key_negotation_result = match (
-            requires_raw_keys,
-            client_supports.contains(&CertificateType::RawPublicKey),
-            client_supports.contains(&CertificateType::X509),
-        ) {
-            (true, true, _) => Ok((extension_type, CertificateType::RawPublicKey)),
-            (false, _, true) => Ok((extension_type, CertificateType::X509)),
-            (false, true, false) => Err(Error::PeerIncompatible(
-                PeerIncompatible::IncorrectCertificateTypeExtension,
-            )),
-            (true, false, _) => Err(Error::PeerIncompatible(
-                PeerIncompatible::IncorrectCertificateTypeExtension,
-            )),
-            (false, false, false) => return Ok(()),
-        };
-
-        match raw_key_negotation_result {
-            Ok((ExtensionType::ClientCertificateType, cert_type)) => {
+        match raw_key_negotiation_result {
+            RawKeyNegotationResult::Negotiated(ExtensionType::ClientCertificateType) => {
                 self.exts
-                    .push(ServerExtension::ClientCertType(cert_type));
+                    .push(ServerExtension::ClientCertType(
+                        CertificateType::RawPublicKey,
+                    ));
             }
-            Ok((ExtensionType::ServerCertificateType, cert_type)) => {
+            RawKeyNegotationResult::Negotiated(ExtensionType::ServerCertificateType) => {
                 self.exts
-                    .push(ServerExtension::ServerCertType(cert_type));
+                    .push(ServerExtension::ServerCertType(
+                        CertificateType::RawPublicKey,
+                    ));
             }
-            Err(err) => {
+            RawKeyNegotationResult::Err(err) => {
                 return Err(cx
                     .common
                     .send_fatal_alert(AlertDescription::HandshakeFailure, err));
             }
-            Ok((_, _)) => unreachable!(),
+            RawKeyNegotationResult::NotNegotiated => {}
+            RawKeyNegotationResult::Negotiated(_) => unreachable!(
+                "The extension type should only ever be ClientCertificateType or ServerCertificateType"
+            ),
         }
         Ok(())
     }
@@ -402,11 +398,6 @@ impl ExpectClientHello {
         sig_schemes
             .retain(|scheme| suites::compatible_sigscheme_for_suites(*scheme, &client_suites));
 
-        // We adhere to the TLS 1.2 RFC by not exposing this to the cert resolver if TLS version is 1.2
-        let certificate_authorities = match version {
-            ProtocolVersion::TLSv1_2 => None,
-            _ => client_hello.certificate_authorities_extension(),
-        };
         // Choose a certificate.
         let certkey = {
             let client_hello = ClientHello {
@@ -416,7 +407,6 @@ impl ExpectClientHello {
                 client_cert_types: client_hello.server_certificate_extension(),
                 server_cert_types: client_hello.client_certificate_extension(),
                 cipher_suites: &client_hello.cipher_suites,
-                certificate_authorities,
             };
             trace!("Resolving server certificate: {client_hello:#?}");
 

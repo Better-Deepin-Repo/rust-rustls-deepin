@@ -19,9 +19,9 @@ use std::net::TcpStream;
 use std::str::FromStr;
 use std::sync::Arc;
 
-use rustls::RootCertStore;
 use rustls::pki_types::pem::PemObject;
 use rustls::pki_types::{CertificateDer, ServerName};
+use rustls::RootCertStore;
 use rustls_native_certs::load_native_certs;
 
 fn start_connection(config: &Arc<rustls::ClientConfig>, domain_name: &str, port: u16) {

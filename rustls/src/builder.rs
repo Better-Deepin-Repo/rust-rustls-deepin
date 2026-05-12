@@ -1,4 +1,5 @@
 use alloc::format;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::fmt;
 use core::marker::PhantomData;
@@ -7,7 +8,6 @@ use crate::client::EchMode;
 use crate::crypto::CryptoProvider;
 use crate::error::Error;
 use crate::msgs::handshake::ALL_KEY_EXCHANGE_ALGORITHMS;
-use crate::sync::Arc;
 use crate::time_provider::TimeProvider;
 use crate::versions;
 #[cfg(doc)]

@@ -26,10 +26,10 @@ use std::{process, str};
 
 use clap::Parser;
 use mio::net::TcpStream;
-use rustls::RootCertStore;
-use rustls::crypto::{CryptoProvider, ring as provider};
+use rustls::crypto::{ring as provider, CryptoProvider};
 use rustls::pki_types::pem::PemObject;
 use rustls::pki_types::{CertificateDer, PrivateKeyDer, ServerName};
+use rustls::RootCertStore;
 use rustls_native_certs::load_native_certs;
 
 const CLIENT: mio::Token = mio::Token(0);
@@ -116,7 +116,7 @@ impl TlsClient {
         let io_state = match self.tls_conn.process_new_packets() {
             Ok(io_state) => io_state,
             Err(err) => {
-                println!("TLS error: {err}");
+                println!("TLS error: {:?}", err);
                 self.closing = true;
                 return;
             }
@@ -330,10 +330,10 @@ fn load_private_key(filename: &str) -> PrivateKeyDer<'static> {
 }
 
 mod danger {
-    use rustls::DigitallySignedStruct;
     use rustls::client::danger::HandshakeSignatureValid;
-    use rustls::crypto::{CryptoProvider, verify_tls12_signature, verify_tls13_signature};
+    use rustls::crypto::{verify_tls12_signature, verify_tls13_signature, CryptoProvider};
     use rustls::pki_types::{CertificateDer, ServerName, UnixTime};
+    use rustls::DigitallySignedStruct;
 
     #[derive(Debug)]
     pub struct NoCertificateVerification(CryptoProvider);

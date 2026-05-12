@@ -8,7 +8,6 @@ use std::net::{TcpListener, TcpStream};
 use std::path::Path;
 use std::sync::Arc;
 
-use rustls::ServerConfig;
 use rustls::pki_types::pem::PemObject;
 use rustls::pki_types::{CertificateDer, PrivateKeyDer};
 use rustls::server::UnbufferedServerConnection;
@@ -16,6 +15,7 @@ use rustls::unbuffered::{
     AppDataRecord, ConnectionState, EncodeError, EncryptError, InsufficientSizeError,
     UnbufferedStatus,
 };
+use rustls::ServerConfig;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut args = env::args();
@@ -168,11 +168,6 @@ fn handle(
 
                     send_tls(&mut sock, outgoing_tls, &mut outgoing_used)?;
                 }
-            }
-
-            ConnectionState::PeerClosed => {}
-            ConnectionState::Closed => {
-                open_connection = false;
             }
 
             _ => unreachable!(),

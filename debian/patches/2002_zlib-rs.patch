@@ -6,27 +6,27 @@ Last-Update: 2024-12-16
 This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 --- a/rustls/Cargo.toml
 +++ b/rustls/Cargo.toml
-@@ -24,7 +24,6 @@
- ring = ["dep:ring", "webpki/ring"]
- std = ["webpki/std", "pki-types/std", "once_cell/std"]
- tls12 = []
--zlib = ["dep:zlib-rs"]
- 
- [build-dependencies]
- rustversion = { version = "1.0.6", optional = true }
-@@ -41,7 +40,6 @@
+@@ -29,7 +29,6 @@
  webpki = { workspace = true }
  pki-types = { workspace = true }
  zeroize = { workspace = true }
 -zlib-rs = { workspace = true, optional = true }
  
+ [features]
+ default = ["ring", "logging", "std", "tls12"]
+@@ -40,7 +39,6 @@
+ custom-provider = []
+ tls12 = []
+ read_buf = ["rustversion", "std"]
+-zlib = ["dep:zlib-rs"]
+ 
  [dev-dependencies]
  base64 = { workspace = true }
 --- a/Cargo.toml
 +++ b/Cargo.toml
-@@ -82,7 +82,6 @@
+@@ -81,7 +81,6 @@
+ rustls-native-certs = "0.6"
  x25519-dalek = "2"
- x509-parser = "0.17"
  zeroize = "1.7"
 -zlib-rs = "0.4"
  

@@ -1,5 +1,6 @@
 use alloc::boxed::Box;
 use alloc::string::ToString;
+use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
 
@@ -28,7 +29,6 @@ use crate::msgs::handshake::{
 use crate::msgs::message::{Message, MessagePayload};
 use crate::msgs::persist;
 use crate::suites::PartiallyExtractedSecrets;
-use crate::sync::Arc;
 use crate::tls12::{self, ConnectionSecrets, Tls12CipherSuite};
 use crate::verify;
 
@@ -598,8 +598,8 @@ impl State<ServerConnectionData> for ExpectClientKx<'_> {
         cx.common
             .start_encryption_tls12(&secrets, Side::Server);
 
-        match self.client_cert {
-            Some(client_cert) => Ok(Box::new(ExpectCertificateVerify {
+        if let Some(client_cert) = self.client_cert {
+            Ok(Box::new(ExpectCertificateVerify {
                 config: self.config,
                 secrets,
                 transcript: self.transcript,
@@ -607,8 +607,9 @@ impl State<ServerConnectionData> for ExpectClientKx<'_> {
                 using_ems: self.using_ems,
                 client_cert,
                 send_ticket: self.send_ticket,
-            })),
-            _ => Ok(Box::new(ExpectCcs {
+            }))
+        } else {
+            Ok(Box::new(ExpectCcs {
                 config: self.config,
                 secrets,
                 transcript: self.transcript,
@@ -616,7 +617,7 @@ impl State<ServerConnectionData> for ExpectClientKx<'_> {
                 using_ems: self.using_ems,
                 resuming: false,
                 send_ticket: self.send_ticket,
-            })),
+            }))
         }
     }
 
@@ -745,7 +746,7 @@ impl State<ServerConnectionData> for ExpectCcs {
                 return Err(inappropriate_message(
                     &payload,
                     &[ContentType::ChangeCipherSpec],
-                ));
+                ))
             }
         }
 

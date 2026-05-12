@@ -95,7 +95,7 @@ enum_builder! {
     /// The `Unknown` item is used when processing unrecognised ordinals.
     #[repr(u16)]
     pub enum ProtocolVersion {
-        SSLv2 => 0x0002,
+        SSLv2 => 0x0200,
         SSLv3 => 0x0300,
         TLSv1_0 => 0x0301,
         TLSv1_1 => 0x0302,
@@ -601,7 +601,7 @@ enum_builder! {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::msgs::enums::tests::{test_enum8, test_enum16};
+    use crate::msgs::enums::tests::{test_enum16, test_enum8};
 
     #[test]
     fn test_enums() {

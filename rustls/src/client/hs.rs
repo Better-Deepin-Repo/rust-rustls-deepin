@@ -1,24 +1,25 @@
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
+use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::ops::Deref;
 
 use pki_types::ServerName;
 
-use super::ResolvesClientCert;
-use super::Tls12Resumption;
 #[cfg(feature = "tls12")]
 use super::tls12;
-use crate::SupportedCipherSuite;
+use super::Tls12Resumption;
 #[cfg(feature = "logging")]
 use crate::bs_debug;
 use crate::check::inappropriate_handshake_message;
 use crate::client::client_conn::ClientConnectionData;
 use crate::client::common::ClientHelloDetails;
 use crate::client::ech::EchState;
-use crate::client::{ClientConfig, EchMode, EchStatus, tls13};
-use crate::common_state::{CommonState, HandshakeKind, KxState, State};
+use crate::client::{tls13, ClientConfig, EchMode, EchStatus};
+use crate::common_state::{
+    CommonState, HandshakeKind, KxState, RawKeyNegotationResult, RawKeyNegotiationParams, State,
+};
 use crate::conn::ConnectionRandoms;
 use crate::crypto::{ActiveKeyExchange, KeyExchangeAlgorithm};
 use crate::enums::{AlertDescription, CipherSuite, ContentType, HandshakeType, ProtocolVersion};
@@ -36,9 +37,8 @@ use crate::msgs::handshake::{
 };
 use crate::msgs::message::{Message, MessagePayload};
 use crate::msgs::persist;
-use crate::sync::Arc;
 use crate::tls13::key_schedule::KeyScheduleEarly;
-use crate::verify::ServerCertVerifier;
+use crate::SupportedCipherSuite;
 
 pub(super) type NextState<'a> = Box<dyn State<ClientConnectionData> + 'a>;
 pub(super) type NextStateOrError<'a> = Result<NextState<'a>, Error>;
@@ -66,9 +66,6 @@ fn find_session(
 
             #[cfg(not(feature = "tls12"))]
             None
-        })
-        .and_then(|resuming| {
-            resuming.compatible_config(&config.verifier, &config.client_auth_cert_resolver)
         })
         .and_then(|resuming| {
             let now = config
@@ -124,27 +121,25 @@ pub(super) fn start_handshake(
         None
     };
 
-    let session_id = match &mut resuming {
-        Some(_resuming) => {
-            debug!("Resuming session");
-            match &mut _resuming.value {
-                #[cfg(feature = "tls12")]
-                ClientSessionValue::Tls12(inner) => {
-                    // If we have a ticket, we use the sessionid as a signal that
-                    // we're  doing an abbreviated handshake.  See section 3.4 in
-                    // RFC5077.
-                    if !inner.ticket().0.is_empty() {
-                        inner.session_id = SessionId::random(config.provider.secure_random)?;
-                    }
-                    Some(inner.session_id)
+    let session_id = if let Some(_resuming) = &mut resuming {
+        debug!("Resuming session");
+
+        match &mut _resuming.value {
+            #[cfg(feature = "tls12")]
+            ClientSessionValue::Tls12(inner) => {
+                // If we have a ticket, we use the sessionid as a signal that
+                // we're  doing an abbreviated handshake.  See section 3.4 in
+                // RFC5077.
+                if !inner.ticket().0.is_empty() {
+                    inner.session_id = SessionId::random(config.provider.secure_random)?;
                 }
-                _ => None,
+                Some(inner.session_id)
             }
+            _ => None,
         }
-        _ => {
-            debug!("Not resuming any session");
-            None
-        }
+    } else {
+        debug!("Not resuming any session");
+        None
     };
 
     // https://tools.ietf.org/html/rfc8446#appendix-D.4
@@ -276,12 +271,6 @@ fn emit_client_hello_for_retry(
         ClientExtension::CertificateStatusRequest(CertificateStatusRequest::build_ocsp()),
     ];
 
-    if support_tls13 {
-        if let Some(cas_extension) = config.verifier.root_hint_subjects() {
-            exts.push(ClientExtension::AuthorityNames(cas_extension.to_owned()));
-        }
-    }
-
     // Send the ECPointFormat extension only if we are proposing ECDHE
     if config
         .provider
@@ -317,14 +306,10 @@ fn emit_client_hello_for_retry(
         debug_assert!(support_tls13);
         let mut shares = vec![KeyShareEntry::new(key_share.group(), key_share.pub_key())];
 
-        if !retryreq
-            .map(|rr| rr.requested_key_share_group().is_some())
-            .unwrap_or_default()
-        {
-            // Only for the initial client hello, or a HRR that does not specify a kx group,
-            // see if we can send a second KeyShare for "free".  We only do this if the same
-            // algorithm is also supported separately by our provider for this version
-            // (`find_kx_group` looks that up).
+        if retryreq.is_none() {
+            // Only for the initial client hello, see if we can send a second KeyShare
+            // for "free".  We only do this if the same algorithm is also supported
+            // separately by our provider for this version (`find_kx_group` looks that up).
             if let Some((component_group, component_share)) =
                 key_share
                     .hybrid_component()
@@ -422,7 +407,7 @@ fn emit_client_hello_for_retry(
             _ => {}
         };
 
-        let seed = ((input.hello.extension_order_seed as u32) << 16)
+        let seed = (input.hello.extension_order_seed as u32) << 16
             | (u16::from(new_ext.ext_type()) as u32);
         match low_quality_integer_hash(seed) {
             u32::MAX => 0,
@@ -706,30 +691,46 @@ pub(super) fn process_server_cert_type_extension(
     common: &mut CommonState,
     config: &ClientConfig,
     server_cert_extension: Option<&CertificateType>,
-) -> Result<Option<(ExtensionType, CertificateType)>, Error> {
-    process_cert_type_extension(
-        common,
-        config
-            .verifier
-            .requires_raw_public_keys(),
-        server_cert_extension.copied(),
-        ExtensionType::ServerCertificateType,
-    )
+) -> Result<(), Error> {
+    let requires_server_rpk = config
+        .verifier
+        .requires_raw_public_keys();
+    let server_offers_rpk = matches!(server_cert_extension, Some(CertificateType::RawPublicKey));
+
+    let raw_key_negotation_params = RawKeyNegotiationParams {
+        peer_supports_raw_key: server_offers_rpk,
+        local_expects_raw_key: requires_server_rpk,
+        extension_type: ExtensionType::ServerCertificateType,
+    };
+    match raw_key_negotation_params.validate_raw_key_negotiation() {
+        RawKeyNegotationResult::Err(err) => {
+            Err(common.send_fatal_alert(AlertDescription::HandshakeFailure, err))
+        }
+        _ => Ok(()),
+    }
 }
 
 pub(super) fn process_client_cert_type_extension(
     common: &mut CommonState,
     config: &ClientConfig,
     client_cert_extension: Option<&CertificateType>,
-) -> Result<Option<(ExtensionType, CertificateType)>, Error> {
-    process_cert_type_extension(
-        common,
-        config
-            .client_auth_cert_resolver
-            .only_raw_public_keys(),
-        client_cert_extension.copied(),
-        ExtensionType::ClientCertificateType,
-    )
+) -> Result<(), Error> {
+    let requires_client_rpk = config
+        .client_auth_cert_resolver
+        .only_raw_public_keys();
+    let server_allows_rpk = matches!(client_cert_extension, Some(CertificateType::RawPublicKey));
+
+    let raw_key_negotation_params = RawKeyNegotiationParams {
+        peer_supports_raw_key: server_allows_rpk,
+        local_expects_raw_key: requires_client_rpk,
+        extension_type: ExtensionType::ClientCertificateType,
+    };
+    match raw_key_negotation_params.validate_raw_key_negotiation() {
+        RawKeyNegotationResult::Err(err) => {
+            Err(common.send_fatal_alert(AlertDescription::HandshakeFailure, err))
+        }
+        _ => Ok(()),
+    }
 }
 
 impl State<ClientConnectionData> for ExpectServerHello {
@@ -912,23 +913,6 @@ impl State<ClientConnectionData> for ExpectServerHello {
             }
             #[cfg(feature = "tls12")]
             SupportedCipherSuite::Tls12(suite) => {
-                // If we didn't have an input session to resume, and we sent a session ID,
-                // that implies we sent a TLS 1.3 legacy_session_id for compatibility purposes.
-                // In this instance since we're now continuing a TLS 1.2 handshake the server
-                // should not have echoed it back: it's a randomly generated session ID it couldn't
-                // have known.
-                if self.input.resuming.is_none()
-                    && !self.input.session_id.is_empty()
-                    && self.input.session_id == server_hello.session_id
-                {
-                    return Err({
-                        cx.common.send_fatal_alert(
-                            AlertDescription::IllegalParameter,
-                            PeerMisbehaved::ServerEchoedCompatibilitySessionId,
-                        )
-                    });
-                }
-
                 let resuming_session = self
                     .input
                     .resuming
@@ -982,24 +966,13 @@ impl ExpectServerHelloOrHelloRetryRequest {
 
         // A retry request is illegal if it contains no cookie and asks for
         // retry of a group we already sent.
-        let config = &self.next.input.config;
-
-        if let (None, Some(req_group)) = (cookie, req_group) {
-            let offered_hybrid = offered_key_share
-                .hybrid_component()
-                .and_then(|(group_name, _)| {
-                    config.find_kx_group(group_name, ProtocolVersion::TLSv1_3)
-                })
-                .map(|skxg| skxg.name());
-
-            if req_group == offered_key_share.group() || Some(req_group) == offered_hybrid {
-                return Err({
-                    cx.common.send_fatal_alert(
-                        AlertDescription::IllegalParameter,
-                        PeerMisbehaved::IllegalHelloRetryRequestWithOfferedGroup,
-                    )
-                });
-            }
+        if cookie.is_none() && req_group == Some(offered_key_share.group()) {
+            return Err({
+                cx.common.send_fatal_alert(
+                    AlertDescription::IllegalParameter,
+                    PeerMisbehaved::IllegalHelloRetryRequestWithOfferedGroup,
+                )
+            });
         }
 
         // Or has an empty cookie.
@@ -1080,6 +1053,7 @@ impl ExpectServerHelloOrHelloRetryRequest {
         }
 
         // Or asks us to use a ciphersuite we didn't offer.
+        let config = &self.next.input.config;
         let Some(cs) = config.find_cipher_suite(hrr.cipher_suite) else {
             return Err({
                 cx.common.send_fatal_alert(
@@ -1207,27 +1181,6 @@ impl State<ClientConnectionData> for ExpectServerHelloOrHelloRetryRequest {
     }
 }
 
-fn process_cert_type_extension(
-    common: &mut CommonState,
-    client_expects: bool,
-    server_negotiated: Option<CertificateType>,
-    extension_type: ExtensionType,
-) -> Result<Option<(ExtensionType, CertificateType)>, Error> {
-    match (client_expects, server_negotiated) {
-        (true, Some(CertificateType::RawPublicKey)) => {
-            Ok(Some((extension_type, CertificateType::RawPublicKey)))
-        }
-        (true, _) => Err(common.send_fatal_alert(
-            AlertDescription::HandshakeFailure,
-            Error::PeerIncompatible(PeerIncompatible::IncorrectCertificateTypeExtension),
-        )),
-        (_, Some(CertificateType::RawPublicKey)) => {
-            unreachable!("Caught by `PeerMisbehaved::UnsolicitedEncryptedExtension`")
-        }
-        (_, _) => Ok(None),
-    }
-}
-
 enum ClientSessionValue {
     Tls13(persist::Tls13ClientSessionValue),
     #[cfg(feature = "tls12")]
@@ -1248,22 +1201,6 @@ impl ClientSessionValue {
             Self::Tls13(v) => Some(v),
             #[cfg(feature = "tls12")]
             Self::Tls12(_) => None,
-        }
-    }
-
-    fn compatible_config(
-        self,
-        server_cert_verifier: &Arc<dyn ServerCertVerifier>,
-        client_creds: &Arc<dyn ResolvesClientCert>,
-    ) -> Option<Self> {
-        match &self {
-            Self::Tls13(v) => v
-                .compatible_config(server_cert_verifier, client_creds)
-                .then_some(self),
-            #[cfg(feature = "tls12")]
-            Self::Tls12(v) => v
-                .compatible_config(server_cert_verifier, client_creds)
-                .then_some(self),
         }
     }
 }

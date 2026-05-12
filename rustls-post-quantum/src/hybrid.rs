@@ -1,10 +1,8 @@
-use alloc::boxed::Box;
-use alloc::vec::Vec;
+use rustls::crypto::{ActiveKeyExchange, CompletedKeyExchange, SharedSecret, SupportedKxGroup};
+use rustls::ffdhe_groups::FfdheGroup;
+use rustls::{Error, NamedGroup, ProtocolVersion};
 
-use super::INVALID_KEY_SHARE;
-use crate::crypto::{ActiveKeyExchange, CompletedKeyExchange, SharedSecret, SupportedKxGroup};
-use crate::ffdhe_groups::FfdheGroup;
-use crate::{Error, NamedGroup, ProtocolVersion};
+use crate::INVALID_KEY_SHARE;
 
 /// A generalization of hybrid key exchange.
 #[derive(Debug)]
@@ -66,27 +64,6 @@ impl SupportedKxGroup for Hybrid {
 
     fn name(&self) -> NamedGroup {
         self.name
-    }
-
-    fn fips(&self) -> bool {
-        // Behold! The Night Mare: SP800-56C rev 2:
-        //
-        // "In addition to the currently approved techniques for the generation of the
-        // shared secret Z as specified in SP 800-56A and SP 800-56B, this Recommendation
-        // permits the use of a "hybrid" shared secret of the form Z′ = Z || T, a
-        // concatenation consisting of a "standard" shared secret Z that was generated
-        // during the execution of a key-establishment scheme (as currently specified in
-        // [SP 800-56A] or [SP 800-56B])"
-        //
-        // NIST plan to adjust this and allow both orders: see
-        // <https://csrc.nist.gov/pubs/sp/800/227/ipd> (Jan 2025) lines 1070-1080.
-        //
-        // But, for now, we follow the SP800-56C logic: the element appearing first is the
-        // one that controls approval.
-        match self.layout.post_quantum_first {
-            true => self.post_quantum.fips(),
-            false => self.classical.fips(),
-        }
     }
 
     fn usable_for_version(&self, version: ProtocolVersion) -> bool {

@@ -16,7 +16,7 @@ mod online {
     fn no_cbc() {
         connect("cbc.badssl.com")
             .fails()
-            .expect(r"TLS error: received fatal alert: HandshakeFailure")
+            .expect(r"TLS error: AlertReceived\(HandshakeFailure\)")
             .go()
             .unwrap();
     }
@@ -26,7 +26,7 @@ mod online {
     fn no_rc4() {
         connect("rc4.badssl.com")
             .fails()
-            .expect(r"TLS error: received fatal alert: HandshakeFailure")
+            .expect(r"TLS error: AlertReceived\(HandshakeFailure\)")
             .go()
             .unwrap();
     }
@@ -36,7 +36,7 @@ mod online {
     fn expired() {
         connect("expired.badssl.com")
             .fails()
-            .expect(r"TLS error: invalid peer certificate: certificate expired: verification time [0-9]+ \(UNIX\), but certificate is not valid after [0-9]+ \([0-9]+ seconds ago\)")
+            .expect(r"TLS error: InvalidCertificate\(Expired\)")
             .go()
             .unwrap();
     }
@@ -46,7 +46,7 @@ mod online {
     fn wrong_host() {
         connect("wrong.host.badssl.com")
             .fails()
-            .expect(r#"TLS error: invalid peer certificate: certificate not valid for name \"wrong.host.badssl.com\"; certificate is only valid for DnsName\(\"\*.badssl.com\"\) or DnsName\(\"badssl.com\"\)"#)
+            .expect(r"TLS error: InvalidCertificate\(NotValidForName\)")
             .go()
             .unwrap();
     }
@@ -56,7 +56,7 @@ mod online {
     fn self_signed() {
         connect("self-signed.badssl.com")
             .fails()
-            .expect(r"TLS error: invalid peer certificate: UnknownIssuer")
+            .expect(r"TLS error: InvalidCertificate\(UnknownIssuer\)")
             .go()
             .unwrap();
     }
@@ -66,7 +66,7 @@ mod online {
     fn no_dh() {
         connect("dh2048.badssl.com")
             .fails()
-            .expect(r"TLS error: received fatal alert: HandshakeFailure")
+            .expect(r"TLS error: AlertReceived\(HandshakeFailure\)")
             .go()
             .unwrap();
     }
@@ -112,7 +112,7 @@ mod online {
     fn too_many_sans() {
         connect("10000-sans.badssl.com")
             .fails()
-            .expect(r"TLS error: received corrupt message of type HandshakePayloadTooLarge")
+            .expect(r"TLS error: InvalidMessage\(HandshakePayloadTooLarge\)")
             .go()
             .unwrap();
     }
@@ -132,7 +132,7 @@ mod online {
     fn sha1_2016() {
         connect("sha1-2016.badssl.com")
             .fails()
-            .expect(r"TLS error: invalid peer certificate: certificate expired: verification time [0-9]+ \(UNIX\), but certificate is not valid after [0-9]+ \([0-9]+ seconds ago\)")
+            .expect(r"TLS error: InvalidCertificate\(Expired\)")
             .go()
             .unwrap();
     }

@@ -62,13 +62,13 @@ jobs:
 
       - name: Install ninja-build tool for aws-lc-fips-sys on Windows
         if: runner.os == 'Windows'
-        uses: seanmiddleditch/gha-setup-ninja@v6
+        uses: seanmiddleditch/gha-setup-ninja@v5
 
       - name: Install golang for aws-lc-fips-sys on macos
         if: runner.os == 'MacOS'
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24.1"
+          go-version: "1.22.2"
 
       - name: cargo build (debug; default features)
         run: cargo build --locked
@@ -104,14 +104,8 @@ jobs:
       - name: cargo build (debug; rustls-provider-example lib in no-std mode)
         run: cargo build --locked -p rustls-provider-example --no-default-features
 
-      - name: cargo test (debug; rustls-provider-example; all features)
-        run: cargo test --all-features -p rustls-provider-example
-
       - name: cargo build (debug; rustls-provider-test)
         run: cargo build --locked -p rustls-provider-test
-
-      - name: cargo test (debug; rustls-provider-test; all features)
-        run: cargo test --all-features -p rustls-provider-test
 
       - name: cargo package --all-features -p rustls
         run: cargo package --all-features -p rustls
@@ -207,7 +201,7 @@ jobs:
       - name: Install golang toolchain
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24"
+          go-version: "1.21"
           cache: false
 
       - name: Run test suite (ring)
@@ -247,9 +241,7 @@ jobs:
         uses: dtolnay/rust-toolchain@nightly
 
       - name: Install cargo fuzz
-        uses: taiki-e/cache-cargo-install-action@v2
-        with:
-          tool: cargo-fuzz
+        run: cargo install cargo-fuzz
 
       - name: Smoke-test fuzz targets
         run: |
@@ -318,14 +310,12 @@ jobs:
           persist-credentials: false
 
       - name: Install rust toolchain
-        uses: dtolnay/rust-toolchain@nightly
+        uses: dtolnay/rust-toolchain@stable
         with:
           components: llvm-tools
 
       - name: Install cargo-llvm-cov
-        uses: taiki-e/cache-cargo-install-action@v2
-        with:
-          tool: cargo-llvm-cov
+        run: cargo install cargo-llvm-cov
 
       - name: Measure coverage
         run: ./admin/coverage --lcov --output-path final.info
@@ -389,20 +379,11 @@ jobs:
 
       - name: Install rust toolchain
         uses: dtolnay/rust-toolchain@stable
-      - name: Install cross
-        uses: taiki-e/cache-cargo-install-action@v2
-        with:
-          tool: cross
-          git: https://github.com/cross-rs/cross
-          # known-working main in feb 2025, bump as needed
-          rev: c7dee4d
-      - name: Install bindgen-cli
-        uses: taiki-e/cache-cargo-install-action@v2
-        with:
-          tool: bindgen-cli
-      - name: Enable bindgen feature for aws-lc-sys (as needed for many cross targets)
+      - name: Install cross (cross-rs) from GitHub
+        run: cargo install cross --git https://github.com/cross-rs/cross
+      - name: Install bindgen feature & CLI for aws-lc-sys (as needed for many cross targets)
         if: ${{ matrix.target != 'i686-unknown-linux-gnu' }}
-        run: cargo add --dev --features bindgen 'aws-lc-sys@>0.20' --package rustls --verbose
+        run: cargo add --dev --features bindgen 'aws-lc-sys@>0.20' --package rustls --verbose && cargo install bindgen-cli --verbose
       - run: cross test --package rustls --target ${{ matrix.target }}
 
   semver:
@@ -476,12 +457,10 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
-      # We want to be free of any warnings, so deny them.
-      # - Allow `clippy::disallowed_types` as a workaround since `disallowed_types` configured in `.clippy.toml`
-      #   is only intended for the main `rustls` crate.
-      - run: ./admin/clippy -- --deny warnings --allow clippy::disallowed_types
-      # - Keep the main crate free of all warnings.
-      - run: cargo clippy -p rustls -- --deny warnings
+      # - we want to be free of any warnings, so deny them
+      # - disable incompatible_msrv as it does not understand that we apply our
+      #   MSRV to the just the core crate.
+      - run: ./admin/clippy -- --deny warnings --allow clippy::incompatible_msrv
 
   clippy-nightly:
     name: Clippy (Nightly)
@@ -500,12 +479,8 @@ jobs:
         uses: dtolnay/rust-toolchain@nightly
         with:
           components: clippy
-      # Do not deny warnings, as nightly clippy sometimes has false negatives.
-      # - Ignore `clippy::disallowed_types` as a workaround since `disallowed_types` configured in `.clippy.toml`
-      #   is only intended for main `rustls` crate.
-      - run: ./admin/clippy -- --allow clippy::disallowed_types
-      # Check the main crate for any Clippy nightly warnings, but do not deny them.
-      - run: cargo clippy -p rustls
+      # do not deny warnings, as nightly clippy sometimes has false negatives
+      - run: ./admin/clippy
 
   check-external-types:
     name: Validate external types appearing in public API
@@ -520,30 +495,10 @@ jobs:
         with:
           toolchain: nightly-2024-06-30
           # ^ sync with https://github.com/awslabs/cargo-check-external-types/blob/main/rust-toolchain.toml
-      - name: Install cargo-check-external-types
-        uses: taiki-e/cache-cargo-install-action@v2
-        with:
-          tool: cargo-check-external-types
+      - run: cargo install --locked cargo-check-external-types
       - name: run cargo-check-external-types for rustls/
         working-directory: rustls/
         run: cargo check-external-types
-
-  taplo:
-    name: Taplo
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-
-      - name: Install rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-      - name: Install taplo-cli
-        uses: taiki-e/cache-cargo-install-action@v2
-        with:
-          tool: taplo-cli
-      - run: taplo format --check
 
   openssl-tests:
     name: Run openssl-tests

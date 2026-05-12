@@ -1,7 +1,7 @@
 # check single-feature tests only on amd64
 # omit testing locally mangled default feature
 
-#Test-Command: /usr/share/dh-rust/bin/cargo-auto-test rustls 0.23.25
+#Test-Command: /usr/share/dh-rust/bin/cargo-auto-test rustls 0.23.20
 # --all-targets
 #Features: test-name=rust-rustls-0.23:default
 #Depends:
@@ -28,10 +28,9 @@
 # librust-serde-json-1+default-dev,
 # librust-tikv-jemallocator-0.6+default-dev,
 # librust-time-0.3-dev,
-# librust-x509-parser-0.17+default-dev,
 #Restrictions: allow-stderr
 
-Test-Command: /usr/share/dh-rust/bin/cargo-auto-test rustls 0.23.25
+Test-Command: /usr/share/dh-rust/bin/cargo-auto-test rustls 0.23.20
  --all-targets --all-features
 Features: test-name=rust-rustls-0.23:@
 Depends:
@@ -58,10 +57,9 @@ Depends:
  librust-serde-json-1+default-dev,
  librust-tikv-jemallocator-0.6+default-dev,
  librust-time-0.3-dev,
- librust-x509-parser-0.17+default-dev,
 Restrictions: allow-stderr
 
-Test-Command: /usr/share/dh-rust/bin/cargo-auto-test rustls 0.23.25
+Test-Command: /usr/share/dh-rust/bin/cargo-auto-test rustls 0.23.20
  --all-targets --no-default-features
 Features: test-name=rust-rustls-0.23:
 Depends:
@@ -88,10 +86,9 @@ Depends:
  librust-serde-json-1+default-dev,
  librust-tikv-jemallocator-0.6+default-dev,
  librust-time-0.3-dev,
- librust-x509-parser-0.17+default-dev,
 Restrictions: allow-stderr
 
-Test-Command: /usr/share/dh-rust/bin/cargo-auto-test rustls 0.23.25
+Test-Command: /usr/share/dh-rust/bin/cargo-auto-test rustls 0.23.20
  --all-targets --no-default-features --features brotli
 Features: test-name=rust-rustls-0.23:brotli
 Depends:
@@ -118,11 +115,10 @@ Depends:
  librust-serde-json-1+default-dev,
  librust-tikv-jemallocator-0.6+default-dev,
  librust-time-0.3-dev,
- librust-x509-parser-0.17+default-dev,
 Restrictions: allow-stderr
 Architecture: amd64
 
-Test-Command: /usr/share/dh-rust/bin/cargo-auto-test rustls 0.23.25
+Test-Command: /usr/share/dh-rust/bin/cargo-auto-test rustls 0.23.20
  --all-targets --no-default-features --features custom-provider
 Features: test-name=rust-rustls-0.23:custom-provider
 Depends:
@@ -149,11 +145,10 @@ Depends:
  librust-serde-json-1+default-dev,
  librust-tikv-jemallocator-0.6+default-dev,
  librust-time-0.3-dev,
- librust-x509-parser-0.17+default-dev,
 Restrictions: allow-stderr
 Architecture: amd64
 
-Test-Command: /usr/share/dh-rust/bin/cargo-auto-test rustls 0.23.25
+Test-Command: /usr/share/dh-rust/bin/cargo-auto-test rustls 0.23.20
  --all-targets --no-default-features --features hashbrown
 Features: test-name=rust-rustls-0.23:hashbrown
 Depends:
@@ -180,11 +175,10 @@ Depends:
  librust-serde-json-1+default-dev,
  librust-tikv-jemallocator-0.6+default-dev,
  librust-time-0.3-dev,
- librust-x509-parser-0.17+default-dev,
 Restrictions: allow-stderr
 Architecture: amd64
 
-Test-Command: /usr/share/dh-rust/bin/cargo-auto-test rustls 0.23.25
+Test-Command: /usr/share/dh-rust/bin/cargo-auto-test rustls 0.23.20
  --all-targets --no-default-features --features logging
 Features: test-name=rust-rustls-0.23:logging
 Depends:
@@ -211,11 +205,10 @@ Depends:
  librust-serde-json-1+default-dev,
  librust-tikv-jemallocator-0.6+default-dev,
  librust-time-0.3-dev,
- librust-x509-parser-0.17+default-dev,
 Restrictions: allow-stderr
 Architecture: amd64
 
-Test-Command: /usr/share/dh-rust/bin/cargo-auto-test rustls 0.23.25
+Test-Command: /usr/share/dh-rust/bin/cargo-auto-test rustls 0.23.20
  --all-targets --no-default-features --features ring
 Features: test-name=rust-rustls-0.23:ring
 Depends:
@@ -242,11 +235,10 @@ Depends:
  librust-serde-json-1+default-dev,
  librust-tikv-jemallocator-0.6+default-dev,
  librust-time-0.3-dev,
- librust-x509-parser-0.17+default-dev,
 Restrictions: allow-stderr
 Architecture: amd64
 
-Test-Command: /usr/share/dh-rust/bin/cargo-auto-test rustls 0.23.25
+Test-Command: /usr/share/dh-rust/bin/cargo-auto-test rustls 0.23.20
  --all-targets --no-default-features --features std
 Features: test-name=rust-rustls-0.23:std
 Depends:
@@ -273,11 +265,10 @@ Depends:
  librust-serde-json-1+default-dev,
  librust-tikv-jemallocator-0.6+default-dev,
  librust-time-0.3-dev,
- librust-x509-parser-0.17+default-dev,
 Restrictions: allow-stderr
 Architecture: amd64
 
-Test-Command: /usr/share/dh-rust/bin/cargo-auto-test rustls 0.23.25
+Test-Command: /usr/share/dh-rust/bin/cargo-auto-test rustls 0.23.20
  --all-targets --no-default-features --features tls12
 Features: test-name=rust-rustls-0.23:tls12
 Depends:
@@ -305,6 +296,5 @@ Depends:
  librust-serde-json-1+default-dev,
  librust-tikv-jemallocator-0.6+default-dev,
  librust-time-0.3-dev,
- librust-x509-parser-0.17+default-dev,
 Restrictions: allow-stderr
 Architecture: amd64

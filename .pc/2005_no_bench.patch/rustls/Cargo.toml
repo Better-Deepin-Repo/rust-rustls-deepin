@@ -1,6 +1,6 @@
 [package]
 name = "rustls"
-version = "0.23.25"
+version = "0.23.20"
 edition = "2021"
 rust-version = "1.71"
 license = "Apache-2.0 OR ISC OR MIT"
@@ -13,28 +13,27 @@ autobenches = false
 autotests = false
 exclude = ["src/testdata", "tests/**"]
 
-[features]
-default = ["ring", "logging", "std", "tls12"]
-
-brotli = ["dep:brotli", "dep:brotli-decompressor", "std"]
-custom-provider = []
-logging = ["log"]
-ring = ["dep:ring", "webpki/ring"]
-std = ["webpki/std", "pki-types/std", "once_cell/std"]
-tls12 = []
-
 [dependencies]
 brotli = { workspace = true, optional = true }
 brotli-decompressor = { workspace = true, optional = true }
 hashbrown = { workspace = true, optional = true }
 log = { workspace = true, optional = true }
 # only required for no-std
-once_cell = { workspace = true }
+once_cell = { version = "1.16", default-features = false, features = ["alloc", "race"] }
 ring = { workspace = true, optional = true }
 subtle = { workspace = true }
 webpki = { workspace = true }
 pki-types = { workspace = true }
 zeroize = { workspace = true }
+
+[features]
+default = ["ring", "logging", "std", "tls12"]
+std = ["webpki/std", "pki-types/std", "once_cell/std"]
+logging = ["log"]
+brotli = ["dep:brotli", "dep:brotli-decompressor", "std"]
+ring = ["dep:ring", "webpki/ring"]
+custom-provider = []
+tls12 = []
 
 [dev-dependencies]
 base64 = { workspace = true }
@@ -44,11 +43,10 @@ hex = { workspace = true }
 log = { workspace = true }
 num-bigint = { workspace = true }
 rcgen = { workspace = true }
-rustls-native-certs = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 time = { workspace = true }
-x509-parser = { workspace = true }
+rustls-native-certs = { workspace = true }
 
 [[bench]]
 name = "benchmarks"
@@ -105,13 +103,6 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [package.metadata.cargo_check_external_types]
 allowed_external_types = [
-  # ---
-  "rustls_pki_types",
-  "rustls_pki_types::*",
+    "rustls_pki_types",
+    "rustls_pki_types::*",
 ]
-
-[package.metadata.cargo-semver-checks.lints]
-enum_no_repr_variant_discriminant_changed = "warn"
-
-[lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ["cfg(bench)", "cfg(coverage_nightly)", "cfg(read_buf)"] }

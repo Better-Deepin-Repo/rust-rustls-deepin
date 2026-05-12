@@ -1,12 +1,13 @@
 use alloc::boxed::Box;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::fmt;
 use core::fmt::{Debug, Formatter};
 use core::sync::atomic::{AtomicUsize, Ordering};
 
 use aws_lc_rs::cipher::{
-    AES_256, AES_256_KEY_LEN, AES_CBC_IV_LEN, DecryptionContext, PaddedBlockDecryptingKey,
-    PaddedBlockEncryptingKey, UnboundCipherKey,
+    DecryptionContext, PaddedBlockDecryptingKey, PaddedBlockEncryptingKey, UnboundCipherKey,
+    AES_256, AES_256_KEY_LEN, AES_CBC_IV_LEN,
 };
 use aws_lc_rs::{hmac, iv};
 
@@ -18,7 +19,6 @@ use crate::log::debug;
 use crate::polyfill::try_split_at;
 use crate::rand::GetRandomFailed;
 use crate::server::ProducesTickets;
-use crate::sync::Arc;
 
 /// A concrete, safe ticket creation mechanism.
 pub struct Ticketer {}

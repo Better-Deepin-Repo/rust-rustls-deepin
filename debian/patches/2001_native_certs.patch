@@ -6,34 +6,34 @@ Last-Update: 2023-08-14
 This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 --- a/Cargo.toml
 +++ b/Cargo.toml
-@@ -87,7 +87,7 @@
+@@ -85,7 +85,7 @@
  tikv-jemallocator = "0.6"
- tokio = { version = "1.34", features = ["io-util", "macros", "net", "rt"] }
- webpki = { package = "rustls-webpki", version = "0.103", features = ["alloc"], default-features = false }
+ tokio = { version = "1.34", features = ["io-util", "macros", "net", "rt"]}
+ webpki = { package = "rustls-webpki", version = "0.102.8", features = ["alloc"], default-features = false }
 -webpki-roots = "0.26"
 +rustls-native-certs = "0.6"
  x25519-dalek = "2"
- x509-parser = "0.17"
  zeroize = "1.7"
+ zlib-rs = "0.4"
 --- a/examples/Cargo.toml
 +++ b/examples/Cargo.toml
 @@ -17,4 +17,4 @@
- rustls = { path = "../rustls", features = ["logging"] }
+ rustls = { path = "../rustls", features = [ "logging" ]}
  serde = { workspace = true }
  tokio = { workspace = true }
 -webpki-roots = { workspace = true }
 +rustls-native-certs = { workspace = true }
 --- a/examples/src/bin/ech-client.rs
 +++ b/examples/src/bin/ech-client.rs
-@@ -47,6 +47,7 @@
- use rustls::crypto::hpke::Hpke;
+@@ -38,6 +38,7 @@
  use rustls::pki_types::pem::PemObject;
  use rustls::pki_types::{CertificateDer, EchConfigListBytes, ServerName};
+ use rustls::RootCertStore;
 +use rustls_native_certs::load_native_certs;
  
  #[tokio::main]
- async fn main() -> Result<(), Box<dyn Error>> {
-@@ -107,7 +108,12 @@
+ async fn main() {
+@@ -88,7 +89,12 @@
              root_store
          }
          None => RootCertStore {
@@ -52,7 +52,7 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 @@ -7,13 +7,15 @@
  use std::sync::Arc;
  
- use rustls::crypto::{CryptoProvider, aws_lc_rs as provider};
+ use rustls::crypto::{aws_lc_rs as provider, CryptoProvider};
 +use rustls::pki_types::CertificateDer;
 +use rustls_native_certs::load_native_certs;
  
@@ -73,9 +73,9 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 --- a/examples/src/bin/simple_0rtt_client.rs
 +++ b/examples/src/bin/simple_0rtt_client.rs
 @@ -22,6 +22,7 @@
- use rustls::RootCertStore;
  use rustls::pki_types::pem::PemObject;
  use rustls::pki_types::{CertificateDer, ServerName};
+ use rustls::RootCertStore;
 +use rustls_native_certs::load_native_certs;
  
  fn start_connection(config: &Arc<rustls::ClientConfig>, domain_name: &str, port: u16) {
@@ -119,9 +119,9 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 --- a/examples/src/bin/tlsclient-mio.rs
 +++ b/examples/src/bin/tlsclient-mio.rs
 @@ -30,6 +30,7 @@
- use rustls::crypto::{CryptoProvider, aws_lc_rs as provider};
  use rustls::pki_types::pem::PemObject;
  use rustls::pki_types::{CertificateDer, PrivateKeyDer, ServerName};
+ use rustls::RootCertStore;
 +use rustls_native_certs::load_native_certs;
  
  const CLIENT: mio::Token = mio::Token(0);
@@ -204,7 +204,7 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
      let mut config = ClientConfig::builder_with_protocol_versions(&[&TLS13])
 --- a/provider-example/Cargo.toml
 +++ b/provider-example/Cargo.toml
-@@ -26,7 +26,7 @@
+@@ -27,7 +27,7 @@
  [dev-dependencies]
  env_logger = { workspace = true }
  rcgen = { workspace = true }
@@ -239,21 +239,18 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
          rustls::ClientConfig::builder_with_provider(rustls_provider_example::provider().into())
 --- a/rustls/Cargo.toml
 +++ b/rustls/Cargo.toml
-@@ -57,10 +57,10 @@
- macro_rules_attribute = { workspace = true }
- num-bigint = { workspace = true }
- rcgen = { workspace = true }
-+rustls-native-certs = { workspace = true }
+@@ -58,7 +58,7 @@
  serde = { workspace = true }
  serde_json = { workspace = true }
  time = { workspace = true }
 -webpki-roots = { workspace = true }
- x509-parser = { workspace = true }
++rustls-native-certs = { workspace = true }
  
  [[bench]]
+ name = "benchmarks"
 --- a/rustls/src/lib.rs
 +++ b/rustls/src/lib.rs
-@@ -170,14 +170,15 @@
+@@ -174,14 +174,15 @@
  //! ```rust
  //! # #[cfg(feature = "aws_lc_rs")] {
  //! # use rustls;

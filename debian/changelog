@@ -1,18 +1,3 @@
-rust-rustls (0.23.25+ds-1) unstable; urgency=medium
-
-  [ upstream ]
-  * new release(s)
-
-  [ Jonas Smedegaard ]
-  * bump project versions in virtual packages and autopkgtests
-  * update and unfuzz patches
-  * add patches 2002_itertools 2002_rustls-webpki
-    to use older branches of crates itertools rustls-webpki
-  * build- and autopkgtest-depend on package for crate x509-parser
-  * declare compliance with Debian Policy 4.7.2
-
- -- Jonas Smedegaard <dr@jones.dk>  Sun, 23 Mar 2025 17:44:41 +0100
-
 rust-rustls (0.23.20+ds-10) unstable; urgency=medium
 
   * really fix patch 1002

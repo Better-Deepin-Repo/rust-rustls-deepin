@@ -1,10 +1,11 @@
+use alloc::sync::Arc;
 use std::prelude::v1::*;
 use std::{format, println, vec};
 
 use pki_types::{CertificateDer, DnsName};
 
-use super::base::{Payload, PayloadU8, PayloadU16, PayloadU24};
-use super::codec::{Codec, Reader, put_u16};
+use super::base::{Payload, PayloadU16, PayloadU24, PayloadU8};
+use super::codec::{put_u16, Codec, Reader};
 use super::enums::{
     CertificateType, ClientCertificateType, Compression, ECCurveType, ECPointFormat, ExtensionType,
     KeyUpdateRequest, NamedGroup, PSKKeyExchangeMode, ServerNameType,
@@ -25,7 +26,6 @@ use crate::enums::{
     CertificateCompressionAlgorithm, CipherSuite, HandshakeType, ProtocolVersion, SignatureScheme,
 };
 use crate::error::InvalidMessage;
-use crate::sync::Arc;
 use crate::verify::DigitallySignedStruct;
 
 #[test]
@@ -749,7 +749,7 @@ fn can_clone_all_server_extensions() {
 
 #[test]
 fn can_round_trip_all_tls12_handshake_payloads() {
-    for hm in all_tls12_handshake_payloads().iter() {
+    for ref hm in all_tls12_handshake_payloads().iter() {
         println!("{:?}", hm.typ);
         let bytes = hm.get_encoding();
         let mut rd = Reader::init(&bytes);
@@ -799,13 +799,11 @@ fn can_detect_truncation_of_all_tls12_handshake_payloads() {
                 _ => {}
             };
 
-            assert!(
-                HandshakeMessagePayload::read_version(
-                    &mut Reader::init(&enc),
-                    ProtocolVersion::TLSv1_2
-                )
-                .is_err()
-            );
+            assert!(HandshakeMessagePayload::read_version(
+                &mut Reader::init(&enc),
+                ProtocolVersion::TLSv1_2
+            )
+            .is_err());
             assert!(HandshakeMessagePayload::read_bytes(&enc).is_err());
         }
     }
@@ -813,7 +811,7 @@ fn can_detect_truncation_of_all_tls12_handshake_payloads() {
 
 #[test]
 fn can_round_trip_all_tls13_handshake_payloads() {
-    for hm in all_tls13_handshake_payloads().iter() {
+    for ref hm in all_tls13_handshake_payloads().iter() {
         println!("{:?}", hm.typ);
         let bytes = hm.get_encoding();
         let mut rd = Reader::init(&bytes);
@@ -865,13 +863,11 @@ fn can_detect_truncation_of_all_tls13_handshake_payloads() {
                 _ => {}
             };
 
-            assert!(
-                HandshakeMessagePayload::read_version(
-                    &mut Reader::init(&enc),
-                    ProtocolVersion::TLSv1_3
-                )
-                .is_err()
-            );
+            assert!(HandshakeMessagePayload::read_version(
+                &mut Reader::init(&enc),
+                ProtocolVersion::TLSv1_3
+            )
+            .is_err());
         }
     }
 }

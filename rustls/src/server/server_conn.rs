@@ -1,4 +1,5 @@
 use alloc::boxed::Box;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::fmt;
 use core::fmt::{Debug, Formatter};
@@ -10,8 +11,6 @@ use std::io;
 use pki_types::{DnsName, UnixTime};
 
 use super::hs;
-#[cfg(feature = "std")]
-use crate::WantsVerifier;
 use crate::builder::ConfigBuilder;
 use crate::common_state::{CommonState, Side};
 #[cfg(feature = "std")]
@@ -27,13 +26,13 @@ use crate::msgs::base::Payload;
 use crate::msgs::enums::CertificateType;
 use crate::msgs::handshake::{ClientHelloPayload, ProtocolName, ServerExtension};
 use crate::msgs::message::Message;
-use crate::suites::ExtractedSecrets;
-use crate::sync::Arc;
 #[cfg(feature = "std")]
 use crate::time_provider::DefaultTimeProvider;
 use crate::time_provider::TimeProvider;
 use crate::vecbuf::ChunkVecBuffer;
-use crate::{DistinguishedName, KeyLog, WantsVersions, compress, sign, verify, versions};
+#[cfg(feature = "std")]
+use crate::WantsVerifier;
+use crate::{compress, sign, verify, versions, KeyLog, WantsVersions};
 
 /// A trait for the ability to store server session data.
 ///
@@ -141,10 +140,6 @@ pub struct ClientHello<'a> {
     pub(super) server_cert_types: Option<&'a [CertificateType]>,
     pub(super) client_cert_types: Option<&'a [CertificateType]>,
     pub(super) cipher_suites: &'a [CipherSuite],
-    /// The [certificate_authorities] extension, if it was sent by the client.
-    ///
-    /// [certificate_authorities]: https://datatracker.ietf.org/doc/html/rfc8446#section-4.2.4
-    pub(super) certificate_authorities: Option<&'a [DistinguishedName]>,
 }
 
 impl<'a> ClientHello<'a> {
@@ -207,15 +202,6 @@ impl<'a> ClientHello<'a> {
     pub fn client_cert_types(&self) -> Option<&'a [CertificateType]> {
         self.client_cert_types
     }
-
-    /// Get the [certificate_authorities] extension sent by the client.
-    ///
-    /// Returns `None` if the client did not send this extension.
-    ///
-    /// [certificate_authorities]: https://datatracker.ietf.org/doc/html/rfc8446#section-4.2.4
-    pub fn certificate_authorities(&self) -> Option<&'a [DistinguishedName]> {
-        self.certificate_authorities
-    }
 }
 
 /// Common configuration for a set of server sessions.
@@ -241,31 +227,6 @@ impl<'a> ClientHello<'a> {
 /// * [`ServerConfig::cert_compressors`]: depends on the crate features, see [`compress::default_cert_compressors()`].
 /// * [`ServerConfig::cert_compression_cache`]: caches the most recently used 4 compressions
 /// * [`ServerConfig::cert_decompressors`]: depends on the crate features, see [`compress::default_cert_decompressors()`].
-///
-/// # Sharing resumption storage between `ServerConfig`s
-///
-/// In a program using many `ServerConfig`s it may improve resumption rates
-/// (which has a significant impact on connection performance) if those
-/// configs share [`ServerConfig::session_storage`] or [`ServerConfig::ticketer`].
-///
-/// However, caution is needed: other fields influence the security of a session
-/// and resumption between them can be surprising.  If sharing
-/// [`ServerConfig::session_storage`] or [`ServerConfig::ticketer`] between two
-/// `ServerConfig`s, you should also evaluate the following fields and ensure
-/// they are equivalent:
-///
-/// * `ServerConfig::verifier` -- client authentication requirements,
-/// * [`ServerConfig::cert_resolver`] -- server identities.
-///
-/// To illustrate, imagine two `ServerConfig`s `A` and `B`.  `A` requires
-/// client authentication, `B` does not.  If `A` and `B` shared a resumption store,
-/// it would be possible for a session originated by `B` (that is, an unauthenticated client)
-/// to be inserted into the store, and then resumed by `A`.  This would give a false
-/// impression to the user of `A` that the client was authenticated.  This is possible
-/// whether the resumption is performed statefully (via [`ServerConfig::session_storage`])
-/// or statelessly (via [`ServerConfig::ticketer`]).
-///
-/// _Unlike_ `ClientConfig`, rustls does not enforce any policy here.
 ///
 /// [`RootCertStore`]: crate::RootCertStore
 /// [`ServerSessionMemoryCache`]: crate::server::handy::ServerSessionMemoryCache
@@ -293,15 +254,9 @@ pub struct ServerConfig {
     pub max_fragment_size: Option<usize>,
 
     /// How to store client sessions.
-    ///
-    /// See [ServerConfig#sharing-resumption-storage-between-serverconfigs]
-    /// for a warning related to this field.
     pub session_storage: Arc<dyn StoresServerSessions>,
 
     /// How to produce tickets.
-    ///
-    /// See [ServerConfig#sharing-resumption-storage-between-serverconfigs]
-    /// for a warning related to this field.
     pub ticketer: Arc<dyn ProducesTickets>,
 
     /// How to choose a server cert and key. This is usually set by
@@ -560,6 +515,7 @@ impl ServerConfig {
 #[cfg(feature = "std")]
 mod connection {
     use alloc::boxed::Box;
+    use alloc::sync::Arc;
     use alloc::vec::Vec;
     use core::fmt;
     use core::fmt::{Debug, Formatter};
@@ -572,7 +528,6 @@ mod connection {
     use crate::error::Error;
     use crate::server::hs;
     use crate::suites::ExtractedSecrets;
-    use crate::sync::Arc;
     use crate::vecbuf::ChunkVecBuffer;
 
     /// Allows reading of early data in resumed TLS1.3 connections.
@@ -923,12 +878,6 @@ impl UnbufferedServerConnection {
             )?),
         })
     }
-
-    /// Extract secrets, so they can be used when configuring kTLS, for example.
-    /// Should be used with care as it exposes secret key material.
-    pub fn dangerous_extract_secrets(self) -> Result<ExtractedSecrets, Error> {
-        self.inner.dangerous_extract_secrets()
-    }
 }
 
 impl Deref for UnbufferedServerConnection {
@@ -948,10 +897,6 @@ impl DerefMut for UnbufferedServerConnection {
 impl UnbufferedConnectionCommon<ServerConnectionData> {
     pub(crate) fn pop_early_data(&mut self) -> Option<Vec<u8>> {
         self.core.data.early_data.pop()
-    }
-
-    pub(crate) fn peek_early_data(&self) -> Option<&[u8]> {
-        self.core.data.early_data.peek()
     }
 }
 
@@ -975,7 +920,6 @@ impl Accepted {
             server_cert_types: payload.server_certificate_extension(),
             client_cert_types: payload.client_certificate_extension(),
             cipher_suites: &payload.cipher_suites,
-            certificate_authorities: payload.certificate_authorities_extension(),
         };
 
         trace!("Accepted::client_hello(): {ch:#?}");
@@ -1093,16 +1037,11 @@ impl EarlyDataState {
         matches!(self, Self::Rejected)
     }
 
-    fn peek(&self) -> Option<&[u8]> {
-        match self {
-            Self::Accepted { received, .. } => received.peek(),
-            _ => None,
-        }
-    }
-
     fn pop(&mut self) -> Option<Vec<u8>> {
         match self {
-            Self::Accepted { received, .. } => received.pop(),
+            Self::Accepted {
+                ref mut received, ..
+            } => received.pop(),
             _ => None,
         }
     }
@@ -1110,7 +1049,9 @@ impl EarlyDataState {
     #[cfg(feature = "std")]
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         match self {
-            Self::Accepted { received, .. } => received.read(buf),
+            Self::Accepted {
+                ref mut received, ..
+            } => received.read(buf),
             _ => Err(io::Error::from(io::ErrorKind::BrokenPipe)),
         }
     }
@@ -1118,24 +1059,26 @@ impl EarlyDataState {
     #[cfg(read_buf)]
     fn read_buf(&mut self, cursor: core::io::BorrowedCursor<'_>) -> io::Result<()> {
         match self {
-            Self::Accepted { received, .. } => received.read_buf(cursor),
+            Self::Accepted {
+                ref mut received, ..
+            } => received.read_buf(cursor),
             _ => Err(io::Error::from(io::ErrorKind::BrokenPipe)),
         }
     }
 
     pub(super) fn take_received_plaintext(&mut self, bytes: Payload<'_>) -> bool {
         let available = bytes.bytes().len();
-        let Self::Accepted { received, left } = self else {
-            return false;
-        };
-
-        if received.apply_limit(available) != available || available > *left {
-            return false;
+        match self {
+            Self::Accepted {
+                ref mut received,
+                ref mut left,
+            } if received.apply_limit(available) == available && available <= *left => {
+                received.append(bytes.into_vec());
+                *left -= available;
+                true
+            }
+            _ => false,
         }
-
-        received.append(bytes.into_vec());
-        *left -= available;
-        true
     }
 }
 

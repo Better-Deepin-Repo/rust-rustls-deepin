@@ -1,4 +1,5 @@
 use alloc::boxed::Box;
+use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
 
@@ -20,19 +21,18 @@ use crate::log::{debug, trace, warn};
 use crate::msgs::codec::{Codec, Reader};
 use crate::msgs::enums::KeyUpdateRequest;
 use crate::msgs::handshake::{
-    CERTIFICATE_MAX_SIZE_LIMIT, CertificateChain, CertificatePayloadTls13, HandshakeMessagePayload,
-    HandshakePayload, NewSessionTicketExtension, NewSessionTicketPayloadTls13,
+    CertificateChain, CertificatePayloadTls13, HandshakeMessagePayload, HandshakePayload,
+    NewSessionTicketExtension, NewSessionTicketPayloadTls13, CERTIFICATE_MAX_SIZE_LIMIT,
 };
 use crate::msgs::message::{Message, MessagePayload};
 use crate::msgs::persist;
 use crate::server::ServerConfig;
 use crate::suites::PartiallyExtractedSecrets;
-use crate::sync::Arc;
 use crate::tls13::key_schedule::{
     KeyScheduleTraffic, KeyScheduleTrafficWithClientFinishedPending, ResumptionSecret,
 };
 use crate::tls13::{
-    Tls13CipherSuite, construct_client_verify_message, construct_server_verify_message,
+    construct_client_verify_message, construct_server_verify_message, Tls13CipherSuite,
 };
 use crate::{compress, rand, verify};
 
@@ -97,15 +97,13 @@ mod client_hello {
             binder: &[u8],
         ) -> bool {
             let binder_plaintext = match &client_hello.payload {
-                MessagePayload::Handshake { parsed, encoded } => {
-                    &encoded.bytes()[..encoded.bytes().len() - parsed.total_binder_length()]
-                }
+                MessagePayload::Handshake { parsed, .. } => parsed.encoding_for_binder_signing(),
                 _ => unreachable!(),
             };
 
             let handshake_hash = self
                 .transcript
-                .hash_given(binder_plaintext);
+                .hash_given(&binder_plaintext);
 
             let key_schedule = KeyScheduleEarly::new(suite, psk);
             let real_binder =
@@ -324,7 +322,7 @@ mod client_hello {
                 self.send_tickets = self.config.send_tls13_tickets;
             }
 
-            if let Some(resume) = &resumedata {
+            if let Some(ref resume) = resumedata {
                 cx.data.received_resumption_data = Some(resume.application_data.0.clone());
                 cx.common
                     .peer_certificates
@@ -404,9 +402,7 @@ mod client_hello {
                     cx.data.early_data.reject();
                 }
                 EarlyDataDecision::RequestedButRejected => {
-                    debug!(
-                        "Client requested early_data, but not accepted: switching to handshake keys with trial decryption"
-                    );
+                    debug!("Client requested early_data, but not accepted: switching to handshake keys with trial decryption");
                     key_schedule.set_handshake_decrypter(
                         Some(max_early_data_size(self.config.max_early_data_size)),
                         cx.common,
@@ -865,7 +861,7 @@ impl State<ServerConnectionData> for ExpectAndSkipRejectedEarlyData {
          *  content type of "application_data" (indicating that they are encrypted),
          *  up to the configured max_early_data_size."
          * (RFC8446, 14.2.10) */
-        if let MessagePayload::ApplicationData(skip_data) = &m.payload {
+        if let MessagePayload::ApplicationData(ref skip_data) = m.payload {
             if skip_data.bytes().len() <= self.skip_data_left {
                 self.skip_data_left -= skip_data.bytes().len();
                 return Ok(self);

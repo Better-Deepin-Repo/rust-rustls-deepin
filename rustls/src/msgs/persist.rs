@@ -1,22 +1,20 @@
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::cmp;
 
 use pki_types::{DnsName, UnixTime};
 use zeroize::Zeroizing;
 
-use crate::client::ResolvesClientCert;
 use crate::enums::{CipherSuite, ProtocolVersion};
 use crate::error::InvalidMessage;
-use crate::msgs::base::{PayloadU8, PayloadU16};
+use crate::msgs::base::{PayloadU16, PayloadU8};
 use crate::msgs::codec::{Codec, Reader};
 use crate::msgs::handshake::CertificateChain;
 #[cfg(feature = "tls12")]
 use crate::msgs::handshake::SessionId;
-use crate::sync::{Arc, Weak};
 #[cfg(feature = "tls12")]
 use crate::tls12::Tls12CipherSuite;
 use crate::tls13::Tls13CipherSuite;
-use crate::verify::ServerCertVerifier;
 
 pub(crate) struct Retrieved<T> {
     pub(crate) value: T,
@@ -84,8 +82,6 @@ impl Tls13ClientSessionValue {
         ticket: Arc<PayloadU16>,
         secret: &[u8],
         server_cert_chain: CertificateChain<'static>,
-        server_cert_verifier: &Arc<dyn ServerCertVerifier>,
-        client_creds: &Arc<dyn ResolvesClientCert>,
         time_now: UnixTime,
         lifetime_secs: u32,
         age_add: u32,
@@ -101,8 +97,6 @@ impl Tls13ClientSessionValue {
                 time_now,
                 lifetime_secs,
                 server_cert_chain,
-                server_cert_verifier,
-                client_creds,
             ),
             quic_params: PayloadU16(Vec::new()),
         }
@@ -166,8 +160,6 @@ impl Tls12ClientSessionValue {
         ticket: Arc<PayloadU16>,
         master_secret: &[u8],
         server_cert_chain: CertificateChain<'static>,
-        server_cert_verifier: &Arc<dyn ServerCertVerifier>,
-        client_creds: &Arc<dyn ResolvesClientCert>,
         time_now: UnixTime,
         lifetime_secs: u32,
         extended_ms: bool,
@@ -182,8 +174,6 @@ impl Tls12ClientSessionValue {
                 time_now,
                 lifetime_secs,
                 server_cert_chain,
-                server_cert_verifier,
-                client_creds,
             ),
         }
     }
@@ -223,8 +213,6 @@ pub struct ClientSessionCommon {
     epoch: u64,
     lifetime_secs: u32,
     server_cert_chain: Arc<CertificateChain<'static>>,
-    server_cert_verifier: Weak<dyn ServerCertVerifier>,
-    client_creds: Weak<dyn ResolvesClientCert>,
 }
 
 impl ClientSessionCommon {
@@ -234,8 +222,6 @@ impl ClientSessionCommon {
         time_now: UnixTime,
         lifetime_secs: u32,
         server_cert_chain: CertificateChain<'static>,
-        server_cert_verifier: &Arc<dyn ServerCertVerifier>,
-        client_creds: &Arc<dyn ResolvesClientCert>,
     ) -> Self {
         Self {
             ticket,
@@ -243,34 +229,6 @@ impl ClientSessionCommon {
             epoch: time_now.as_secs(),
             lifetime_secs: cmp::min(lifetime_secs, MAX_TICKET_LIFETIME),
             server_cert_chain: Arc::new(server_cert_chain),
-            server_cert_verifier: Arc::downgrade(server_cert_verifier),
-            client_creds: Arc::downgrade(client_creds),
-        }
-    }
-
-    pub(crate) fn compatible_config(
-        &self,
-        server_cert_verifier: &Arc<dyn ServerCertVerifier>,
-        client_creds: &Arc<dyn ResolvesClientCert>,
-    ) -> bool {
-        let same_verifier = Weak::ptr_eq(
-            &Arc::downgrade(server_cert_verifier),
-            &self.server_cert_verifier,
-        );
-        let same_creds = Weak::ptr_eq(&Arc::downgrade(client_creds), &self.client_creds);
-
-        match (same_verifier, same_creds) {
-            (true, true) => true,
-            (false, _) => {
-                crate::log::trace!("resumption not allowed between different ServerCertVerifiers");
-                false
-            }
-            (_, _) => {
-                crate::log::trace!(
-                    "resumption not allowed between different ResolvesClientCert values"
-                );
-                false
-            }
         }
     }
 
@@ -313,7 +271,7 @@ pub struct ServerSessionValue {
 
 impl Codec<'_> for ServerSessionValue {
     fn encode(&self, bytes: &mut Vec<u8>) {
-        if let Some(sni) = &self.sni {
+        if let Some(ref sni) = self.sni {
             1u8.encode(bytes);
             let sni_bytes: &str = sni.as_ref();
             PayloadU8::new(Vec::from(sni_bytes)).encode(bytes);
@@ -324,13 +282,13 @@ impl Codec<'_> for ServerSessionValue {
         self.cipher_suite.encode(bytes);
         self.master_secret.encode(bytes);
         (u8::from(self.extended_ms)).encode(bytes);
-        if let Some(chain) = &self.client_cert_chain {
+        if let Some(ref chain) = self.client_cert_chain {
             1u8.encode(bytes);
             chain.encode(bytes);
         } else {
             0u8.encode(bytes);
         }
-        if let Some(alpn) = &self.alpn {
+        if let Some(ref alpn) = self.alpn {
             1u8.encode(bytes);
             alpn.encode(bytes);
         } else {

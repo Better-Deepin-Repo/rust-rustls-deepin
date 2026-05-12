@@ -6,11 +6,10 @@ extern crate rustls;
 use std::io;
 use std::sync::Arc;
 
-use rustls::server::{Accepted, Acceptor};
+use rustls::server::{Acceptor, ResolvesServerCert};
 use rustls::{ServerConfig, ServerConnection};
 
 fuzz_target!(|data: &[u8]| {
-    let _ = env_logger::try_init();
     match data.split_first() {
         Some((0x00, rest)) => fuzz_buffered_api(rest),
         Some((0x01, rest)) => fuzz_acceptor_api(rest),
@@ -20,16 +19,14 @@ fuzz_target!(|data: &[u8]| {
 
 fn fuzz_buffered_api(data: &[u8]) {
     let config = Arc::new(
-        ServerConfig::builder_with_provider(rustls_fuzzing_provider::provider().into())
-            .with_safe_default_protocol_versions()
-            .unwrap()
+        ServerConfig::builder()
             .with_no_client_auth()
-            .with_cert_resolver(rustls_fuzzing_provider::server_cert_resolver()),
+            .with_cert_resolver(Arc::new(Fail)),
     );
     let mut stream = io::Cursor::new(data);
     let mut server = ServerConnection::new(config).unwrap();
-
-    service_connection(&mut stream, &mut server);
+    let _ = server.read_tls(&mut stream);
+    let _ = server.process_new_packets();
 }
 
 fn fuzz_acceptor_api(data: &[u8]) {
@@ -37,16 +34,9 @@ fn fuzz_acceptor_api(data: &[u8]) {
     let mut stream = io::Cursor::new(data);
 
     loop {
-        let rd = server
-            .read_tls(&mut stream)
-            .unwrap_or(0);
-
+        let rd = server.read_tls(&mut stream).unwrap();
         match server.accept() {
-            Ok(Some(accepted)) => {
-                fuzz_accepted(&mut stream, accepted);
-                break;
-            }
-            Err(_) => {
+            Ok(Some(_)) | Err(_) => {
                 break;
             }
             Ok(None) => {}
@@ -57,33 +47,14 @@ fn fuzz_acceptor_api(data: &[u8]) {
     }
 }
 
-fn fuzz_accepted(stream: &mut dyn io::Read, accepted: Accepted) {
-    let mut maybe_server = accepted.into_connection(Arc::new(
-        ServerConfig::builder_with_provider(rustls_fuzzing_provider::provider().into())
-            .with_safe_default_protocol_versions()
-            .unwrap()
-            .with_no_client_auth()
-            .with_cert_resolver(rustls_fuzzing_provider::server_cert_resolver()),
-    ));
+#[derive(Debug)]
+struct Fail;
 
-    if let Ok(conn) = &mut maybe_server {
-        service_connection(stream, conn);
-    }
-}
-
-fn service_connection(stream: &mut dyn io::Read, server: &mut ServerConnection) {
-    loop {
-        let rd = server.read_tls(stream);
-        if server.process_new_packets().is_err() {
-            break;
-        }
-
-        if matches!(rd, Ok(0) | Err(_)) {
-            break;
-        }
-
-        // gather and discard written data
-        let mut wr = vec![];
-        server.write_tls(&mut &mut wr).unwrap();
+impl ResolvesServerCert for Fail {
+    fn resolve(
+        &self,
+        _client_hello: rustls::server::ClientHello,
+    ) -> Option<Arc<rustls::sign::CertifiedKey>> {
+        None
     }
 }

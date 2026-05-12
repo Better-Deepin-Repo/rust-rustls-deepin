@@ -8,7 +8,7 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 +++ b/Cargo.toml
 @@ -56,7 +56,6 @@
  hpke-rs-rust-crypto = "0.2"
- itertools = ">= 0.13.0, <= 0.14"
+ itertools = "0.13"
  log = { version = "0.4.8" }
 -macro_rules_attribute = "0.2"
  mio = { version = "1", features = ["net", "os-poll"] }
@@ -16,17 +16,17 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
  once_cell = { version = "1.16", default-features = false, features = ["alloc", "race"] }
 --- a/rustls/Cargo.toml
 +++ b/rustls/Cargo.toml
-@@ -49,7 +49,6 @@
+@@ -48,7 +48,6 @@
  env_logger = { workspace = true }
  hex = { workspace = true }
  log = { workspace = true }
 -macro_rules_attribute = { workspace = true }
  num-bigint = { workspace = true }
  rcgen = { workspace = true }
- rustls-native-certs = { workspace = true }
+ serde = { workspace = true }
 --- a/rustls/src/client/handy.rs
 +++ b/rustls/src/client/handy.rs
-@@ -244,15 +244,13 @@
+@@ -276,15 +276,13 @@
      }
  }
  
@@ -34,17 +34,17 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 -#[macro_rules_attribute::apply(test_for_each_provider)]
 -mod tests {
 +test_for_each_provider! {
+     use alloc::sync::Arc;
      use std::prelude::v1::*;
  
      use pki_types::{ServerName, UnixTime};
- 
-     use super::NoClientSessionStorage;
--    use super::provider::cipher_suite;
 +    use provider::cipher_suite;
-     use crate::client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier};
-     use crate::client::{ClientSessionStore, ResolvesClientCert};
+ 
+-    use super::provider::cipher_suite;
+     use super::NoClientSessionStorage;
+     use crate::client::ClientSessionStore;
      use crate::msgs::base::PayloadU16;
-@@ -306,8 +304,7 @@
+@@ -331,8 +329,7 @@
              c.remove_tls12_session(&name);
          }
  
@@ -92,7 +92,7 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
      use crate::enums::{HandshakeType, ProtocolVersion};
 --- a/rustls/src/lib.rs
 +++ b/rustls/src/lib.rs
-@@ -412,7 +412,6 @@
+@@ -398,7 +398,6 @@
      pub(crate) use {_warn as warn, debug, error, trace};
  }
  
@@ -215,7 +215,7 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
      use crate::msgs::handshake::{ServerEcdhParams, ServerKeyExchangeParams};
 --- a/rustls/src/tls13/key_schedule.rs
 +++ b/rustls/src/tls13/key_schedule.rs
-@@ -898,15 +898,13 @@
+@@ -898,17 +898,16 @@
      f(expander, info)
  }
  
@@ -233,8 +233,11 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 +    use provider::tls13::{
          TLS13_AES_128_GCM_SHA256_INTERNAL, TLS13_CHACHA20_POLY1305_SHA256_INTERNAL,
      };
-     use super::{KeySchedule, SecretKind, derive_traffic_iv, derive_traffic_key};
-@@ -1086,14 +1084,12 @@
++
+     use super::{derive_traffic_iv, derive_traffic_key, KeySchedule, SecretKind};
+     use crate::KeyLog;
+ 
+@@ -1086,15 +1085,13 @@
      }
  }
  
@@ -247,11 +250,12 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
          use core::fmt::Debug;
  
 -        use super::provider::tls13::TLS13_CHACHA20_POLY1305_SHA256_INTERNAL;
+         use super::{derive_traffic_iv, derive_traffic_key, KeySchedule, SecretKind};
 +        use provider::tls13::TLS13_CHACHA20_POLY1305_SHA256_INTERNAL;
-         use super::{KeySchedule, SecretKind, derive_traffic_iv, derive_traffic_key};
          use crate::KeyLog;
  
-@@ -1112,7 +1108,8 @@
+         fn extract_traffic_secret(ks: &KeySchedule, kind: SecretKind) {
+@@ -1112,7 +1109,8 @@
                  .expander_for_okm(&traffic_secret);
              test::black_box(derive_traffic_key(
                  traffic_secret_expander.as_ref(),
@@ -270,12 +274,12 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 -#[macro_rules_attribute::apply(bench_for_each_provider)]
 -mod benchmarks {
 +bench_for_each_provider! {
-     use super::{Context, provider};
+     use super::{provider, Context};
  
      #[bench]
 --- a/rustls/src/webpki/client_verifier.rs
 +++ b/rustls/src/webpki/client_verifier.rs
-@@ -428,16 +428,14 @@
+@@ -428,9 +428,7 @@
      Deny,
  }
  
@@ -284,19 +288,20 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 -mod tests {
 +test_for_each_provider! {
      use std::prelude::v1::*;
+     use std::sync::Arc;
      use std::{format, println, vec};
- 
+@@ -438,7 +436,7 @@
      use pki_types::pem::PemObject;
      use pki_types::{CertificateDer, CertificateRevocationListDer};
  
--    use super::{WebPkiClientVerifier, provider};
+-    use super::{provider, WebPkiClientVerifier};
 +    use super::WebPkiClientVerifier;
-     use crate::RootCertStore;
      use crate::server::VerifierBuilderError;
-     use crate::sync::Arc;
+     use crate::RootCertStore;
+ 
 --- a/rustls/src/webpki/server_verifier.rs
 +++ b/rustls/src/webpki/server_verifier.rs
-@@ -300,16 +300,14 @@
+@@ -300,9 +300,7 @@
      }
  }
  
@@ -305,13 +310,14 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 -mod tests {
 +test_for_each_provider! {
      use std::prelude::v1::*;
+     use std::sync::Arc;
      use std::{println, vec};
- 
+@@ -310,7 +308,7 @@
      use pki_types::pem::PemObject;
      use pki_types::{CertificateDer, CertificateRevocationListDer};
  
--    use super::{VerifierBuilderError, WebPkiServerVerifier, provider};
+-    use super::{provider, VerifierBuilderError, WebPkiServerVerifier};
 +    use super::{VerifierBuilderError, WebPkiServerVerifier};
      use crate::RootCertStore;
-     use crate::sync::Arc;
  
+     fn load_crls(crls_der: &[&[u8]]) -> Vec<CertificateRevocationListDer<'static>> {

@@ -10,13 +10,14 @@ use crate::crypto::cipher::{AeadKey, Iv};
 use crate::crypto::tls13::{Hkdf, HkdfExpander, OkmBlock};
 use crate::enums::AlertDescription;
 use crate::error::Error;
-use crate::tls13::Tls13CipherSuite;
 use crate::tls13::key_schedule::{
     hkdf_expand_label, hkdf_expand_label_aead_key, hkdf_expand_label_block,
 };
+use crate::tls13::Tls13CipherSuite;
 
 #[cfg(feature = "std")]
 mod connection {
+    use alloc::sync::Arc;
     use alloc::vec;
     use alloc::vec::Vec;
     use core::fmt::{self, Debug};
@@ -26,7 +27,7 @@ mod connection {
 
     use super::{DirectionalKeys, KeyChange, Version};
     use crate::client::{ClientConfig, ClientConnectionData};
-    use crate::common_state::{CommonState, DEFAULT_BUFFER_LIMIT, Protocol};
+    use crate::common_state::{CommonState, Protocol, DEFAULT_BUFFER_LIMIT};
     use crate::conn::{ConnectionCore, SideData};
     use crate::enums::{AlertDescription, ContentType, ProtocolVersion};
     use crate::error::Error;
@@ -34,7 +35,6 @@ mod connection {
     use crate::msgs::handshake::{ClientExtension, ServerExtension};
     use crate::msgs::message::InboundPlainMessage;
     use crate::server::{ServerConfig, ServerConnectionData};
-    use crate::sync::Arc;
     use crate::vecbuf::ChunkVecBuffer;
 
     /// A QUIC client or server connection.

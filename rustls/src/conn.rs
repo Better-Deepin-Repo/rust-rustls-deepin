@@ -5,13 +5,13 @@ use core::ops::{Deref, DerefMut, Range};
 #[cfg(feature = "std")]
 use std::io;
 
-use crate::common_state::{CommonState, Context, DEFAULT_BUFFER_LIMIT, IoState, State};
+use crate::common_state::{CommonState, Context, IoState, State, DEFAULT_BUFFER_LIMIT};
 use crate::enums::{AlertDescription, ContentType, ProtocolVersion};
 use crate::error::{Error, PeerMisbehaved};
 use crate::log::trace;
-use crate::msgs::deframer::DeframerIter;
 use crate::msgs::deframer::buffers::{BufferProgress, DeframerVecBuffer, Delocator, Locator};
 use crate::msgs::deframer::handshake::HandshakeDeframer;
+use crate::msgs::deframer::DeframerIter;
 use crate::msgs::handshake::Random;
 use crate::msgs::message::{InboundPlainMessage, Message, MessagePayload};
 use crate::record_layer::Decrypted;
@@ -25,14 +25,14 @@ mod connection {
     use alloc::vec::Vec;
     use core::fmt::Debug;
     use core::ops::{Deref, DerefMut};
-    use std::io::{self, BufRead, Read};
+    use std::io;
 
-    use crate::ConnectionCommon;
     use crate::common_state::{CommonState, IoState};
     use crate::error::Error;
     use crate::msgs::message::OutboundChunks;
     use crate::suites::ExtractedSecrets;
     use crate::vecbuf::ChunkVecBuffer;
+    use crate::ConnectionCommon;
 
     /// A client or server connection.
     #[derive(Debug)]
@@ -47,7 +47,7 @@ mod connection {
         /// Read TLS content from `rd`.
         ///
         /// See [`ConnectionCommon::read_tls()`] for more information.
-        pub fn read_tls(&mut self, rd: &mut dyn Read) -> Result<usize, io::Error> {
+        pub fn read_tls(&mut self, rd: &mut dyn io::Read) -> Result<usize, io::Error> {
             match self {
                 Self::Client(conn) => conn.read_tls(rd),
                 Self::Server(conn) => conn.read_tls(rd),
@@ -108,7 +108,7 @@ mod connection {
         pub fn complete_io<T>(&mut self, io: &mut T) -> Result<(usize, usize), io::Error>
         where
             Self: Sized,
-            T: Read + io::Write,
+            T: io::Read + io::Write,
         {
             match self {
                 Self::Client(conn) => conn.complete_io(io),
@@ -173,7 +173,7 @@ mod connection {
         pub(super) has_seen_eof: bool,
     }
 
-    impl<'a> Reader<'a> {
+    impl Reader<'_> {
         /// Check the connection's state if no bytes are available for reading.
         fn check_no_bytes_state(&self) -> io::Result<()> {
             match (self.has_received_close_notify, self.has_seen_eof) {
@@ -189,23 +189,9 @@ mod connection {
                 (false, false) => Err(io::ErrorKind::WouldBlock.into()),
             }
         }
-
-        /// Obtain a chunk of plaintext data received from the peer over this TLS connection.
-        ///
-        /// This method consumes `self` so that it can return a slice whose lifetime is bounded by
-        /// the [`ConnectionCommon`] that created this `Reader`.
-        pub fn into_first_chunk(self) -> io::Result<&'a [u8]> {
-            match self.received_plaintext.chunk() {
-                Some(chunk) => Ok(chunk),
-                None => {
-                    self.check_no_bytes_state()?;
-                    Ok(&[])
-                }
-            }
-        }
     }
 
-    impl Read for Reader<'_> {
+    impl io::Read for Reader<'_> {
         /// Obtain plaintext data received from the peer over this TLS connection.
         ///
         /// If the peer closes the TLS session cleanly, this returns `Ok(0)`  once all
@@ -271,31 +257,8 @@ mod connection {
         }
     }
 
-    impl BufRead for Reader<'_> {
-        /// Obtain a chunk of plaintext data received from the peer over this TLS connection.
-        /// This reads the same data as [`Reader::read()`], but returns a reference instead of
-        /// copying the data.
-        ///
-        /// The caller should call [`Reader::consume()`] afterward to advance the buffer.
-        ///
-        /// See [`Reader::into_first_chunk()`] for a version of this function that returns a
-        /// buffer with a longer lifetime.
-        fn fill_buf(&mut self) -> io::Result<&[u8]> {
-            Reader {
-                // reborrow
-                received_plaintext: self.received_plaintext,
-                ..*self
-            }
-            .into_first_chunk()
-        }
-
-        fn consume(&mut self, amt: usize) {
-            self.received_plaintext
-                .consume_first_chunk(amt)
-        }
-    }
-
-    const UNEXPECTED_EOF_MESSAGE: &str = "peer closed connection without sending TLS close_notify: \
+    const UNEXPECTED_EOF_MESSAGE: &str =
+        "peer closed connection without sending TLS close_notify: \
 https://docs.rs/rustls/latest/rustls/manual/_03_howto/index.html#unexpected-eof";
 
     /// A structure that implements [`std::io::Write`] for writing plaintext.
@@ -466,7 +429,18 @@ impl<Data> ConnectionCommon<Data> {
     /// Extract secrets, so they can be used when configuring kTLS, for example.
     /// Should be used with care as it exposes secret key material.
     pub fn dangerous_extract_secrets(self) -> Result<ExtractedSecrets, Error> {
-        self.core.dangerous_extract_secrets()
+        if !self.enable_secret_extraction {
+            return Err(Error::General("Secret extraction is disabled".into()));
+        }
+
+        let st = self.core.state?;
+
+        let record_layer = self.core.common_state.record_layer;
+        let PartiallyExtractedSecrets { tx, rx } = st.extract_secrets()?;
+        Ok(ExtractedSecrets {
+            tx: (record_layer.write_seq(), tx),
+            rx: (record_layer.read_seq(), rx),
+        })
     }
 
     /// Sets a limit on the internal buffers used to buffer
@@ -638,7 +612,7 @@ impl<Data> ConnectionCommon<Data> {
                         rdlen += n;
                         Some(n)
                     }
-                    Err(err) if err.kind() == io::ErrorKind::Interrupted => None, // nothing to do
+                    Err(ref err) if err.kind() == io::ErrorKind::Interrupted => None, // nothing to do
                     Err(err) => return Err(err),
                 };
                 if read_size.is_some() {
@@ -799,7 +773,6 @@ impl<Data> From<ConnectionCore<Data>> for ConnectionCommon<Data> {
 pub struct UnbufferedConnectionCommon<Data> {
     pub(crate) core: ConnectionCore<Data>,
     wants_write: bool,
-    emitted_peer_closed_state: bool,
 }
 
 impl<Data> From<ConnectionCore<Data>> for UnbufferedConnectionCommon<Data> {
@@ -807,16 +780,7 @@ impl<Data> From<ConnectionCore<Data>> for UnbufferedConnectionCommon<Data> {
         Self {
             core,
             wants_write: false,
-            emitted_peer_closed_state: false,
         }
-    }
-}
-
-impl<Data> UnbufferedConnectionCommon<Data> {
-    /// Extract secrets, so they can be used when configuring kTLS, for example.
-    /// Should be used with care as it exposes secret key material.
-    pub fn dangerous_extract_secrets(self) -> Result<ExtractedSecrets, Error> {
-        self.core.dangerous_extract_secrets()
     }
 }
 
@@ -1002,7 +966,7 @@ impl<Data> ConnectionCore<Data> {
                     Ok(None) if !self.hs_deframer.is_aligned() => {
                         return Err(
                             PeerMisbehaved::RejectedEarlyDataInterleavedWithHandshakeMessage.into(),
-                        );
+                        )
                     }
 
                     // failed decryption during trial decryption.
@@ -1155,24 +1119,6 @@ impl<Data> ConnectionCore<Data> {
 
         self.common_state
             .process_main_protocol(msg, state, &mut self.data, sendable_plaintext)
-    }
-
-    pub(crate) fn dangerous_extract_secrets(self) -> Result<ExtractedSecrets, Error> {
-        if !self
-            .common_state
-            .enable_secret_extraction
-        {
-            return Err(Error::General("Secret extraction is disabled".into()));
-        }
-
-        let st = self.state?;
-
-        let record_layer = self.common_state.record_layer;
-        let PartiallyExtractedSecrets { tx, rx } = st.extract_secrets()?;
-        Ok(ExtractedSecrets {
-            tx: (record_layer.write_seq(), tx),
-            rx: (record_layer.read_seq(), rx),
-        })
     }
 
     pub(crate) fn export_keying_material<T: AsMut<[u8]>>(

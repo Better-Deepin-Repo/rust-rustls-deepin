@@ -1,4 +1,5 @@
 use alloc::boxed::Box;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::fmt;
 use core::fmt::{Debug, Formatter};
@@ -14,7 +15,6 @@ use crate::log::debug;
 use crate::polyfill::try_split_at;
 use crate::rand::GetRandomFailed;
 use crate::server::ProducesTickets;
-use crate::sync::Arc;
 
 /// A concrete, safe ticket creation mechanism.
 pub struct Ticketer {}

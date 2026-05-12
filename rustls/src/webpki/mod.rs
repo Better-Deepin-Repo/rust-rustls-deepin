@@ -1,3 +1,5 @@
+#[cfg(feature = "std")]
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::fmt;
 
@@ -5,8 +7,6 @@ use pki_types::CertificateRevocationListDer;
 use webpki::{CertRevocationList, OwnedCertRevocationList};
 
 use crate::error::{CertRevocationListError, CertificateError, Error, OtherError};
-#[cfg(feature = "std")]
-use crate::sync::Arc;
 
 mod anchors;
 mod client_verifier;
@@ -19,11 +19,11 @@ pub use server_verifier::{ServerCertVerifierBuilder, WebPkiServerVerifier};
 // Conditionally exported from crate.
 #[allow(unreachable_pub)]
 pub use verify::{
-    ParsedCertificate, verify_server_cert_signed_by_trust_anchor, verify_server_name,
+    verify_server_cert_signed_by_trust_anchor, verify_server_name, ParsedCertificate,
 };
 pub use verify::{
-    WebPkiSupportedAlgorithms, verify_tls12_signature, verify_tls13_signature,
-    verify_tls13_signature_with_raw_key,
+    verify_tls12_signature, verify_tls13_signature, verify_tls13_signature_with_raw_key,
+    WebPkiSupportedAlgorithms,
 };
 
 /// An error that can occur when building a certificate verifier.
@@ -77,8 +77,6 @@ fn pki_error(error: webpki::Error) -> Error {
             CertRevocationListError::BadSignature.into()
         }
 
-        RequiredEkuNotFound => CertificateError::InvalidPurpose.into(),
-
         _ => CertificateError::Other(OtherError(
             #[cfg(feature = "std")]
             Arc::new(error),
@@ -122,7 +120,7 @@ fn parse_crls(
 mod tests {
     #[test]
     fn pki_crl_errors() {
-        use super::{CertRevocationListError, CertificateError, Error, pki_error};
+        use super::{pki_error, CertRevocationListError, CertificateError, Error};
 
         // CRL signature errors should be turned into BadSignature.
         assert_eq!(
@@ -153,8 +151,8 @@ mod tests {
 
     #[test]
     fn crl_error_from_webpki() {
-        use super::CertRevocationListError::*;
         use super::crl_error;
+        use super::CertRevocationListError::*;
 
         let testcases = &[
             (webpki::Error::InvalidCrlSignatureForPublicKey, BadSignature),

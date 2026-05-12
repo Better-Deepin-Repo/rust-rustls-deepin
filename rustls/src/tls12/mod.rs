@@ -354,26 +354,22 @@ test_for_each_provider! {
         server_buf.push(34);
 
         let mut common = CommonState::new(Side::Client);
-        assert!(
-            decode_kx_params::<ServerKeyExchangeParams>(
-                KeyExchangeAlgorithm::ECDHE,
-                &mut common,
-                &server_buf
-            )
-            .is_err()
-        );
+        assert!(decode_kx_params::<ServerKeyExchangeParams>(
+            KeyExchangeAlgorithm::ECDHE,
+            &mut common,
+            &server_buf
+        )
+        .is_err());
     }
 
     #[test]
     fn client_ecdhe_invalid() {
         let mut common = CommonState::new(Side::Server);
-        assert!(
-            decode_kx_params::<ServerKeyExchangeParams>(
-                KeyExchangeAlgorithm::ECDHE,
-                &mut common,
-                &[34],
-            )
-            .is_err()
-        );
+        assert!(decode_kx_params::<ServerKeyExchangeParams>(
+            KeyExchangeAlgorithm::ECDHE,
+            &mut common,
+            &[34],
+        )
+        .is_err());
     }
 }

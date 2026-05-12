@@ -1,7 +1,6 @@
 #![cfg(feature = "ring")]
-#![allow(clippy::disallowed_types)]
 
-use bencher::{Bencher, benchmark_group, benchmark_main};
+use bencher::{benchmark_group, benchmark_main, Bencher};
 use rustls::crypto::ring as provider;
 
 #[path = "../tests/common/mod.rs"]

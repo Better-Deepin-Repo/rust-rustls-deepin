@@ -15,5 +15,5 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 -hashbrown = { version = "0.15", default-features = false, features = ["default-hasher", "inline-more"] }
 +hashbrown = { version = "0.14", default-features = false, features = ["ahash", "inline-more"] }
  hex = "0.4"
- hickory-resolver = { version = "0.25.0-alpha.5", features = ["dns-over-https-rustls", "webpki-roots"] }
+ hickory-resolver = { version = "=0.25.0-alpha.3", features = ["dns-over-https-rustls", "webpki-roots"] }
  hmac = "0.12"

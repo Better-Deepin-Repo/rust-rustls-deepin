@@ -1,3 +1,4 @@
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 
 use pki_types::{CertificateDer, CertificateRevocationListDer, ServerName, UnixTime};
@@ -5,17 +6,16 @@ use webpki::{CertRevocationList, ExpirationPolicy, RevocationCheckDepth, Unknown
 
 use crate::crypto::{CryptoProvider, WebPkiSupportedAlgorithms};
 use crate::log::trace;
-use crate::sync::Arc;
 use crate::verify::{
     DigitallySignedStruct, HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier,
 };
 use crate::webpki::verify::{
-    ParsedCertificate, verify_server_cert_signed_by_trust_anchor_impl, verify_tls12_signature,
-    verify_tls13_signature,
+    verify_server_cert_signed_by_trust_anchor_impl, verify_tls12_signature, verify_tls13_signature,
+    ParsedCertificate,
 };
-use crate::webpki::{VerifierBuilderError, parse_crls, verify_server_name};
+use crate::webpki::{parse_crls, verify_server_name, VerifierBuilderError};
 #[cfg(doc)]
-use crate::{ConfigBuilder, ServerConfig, crypto};
+use crate::{crypto, ConfigBuilder, ServerConfig};
 use crate::{Error, RootCertStore, SignatureScheme};
 
 /// A builder for configuring a `webpki` server certificate verifier.
@@ -302,6 +302,7 @@ impl ServerCertVerifier for WebPkiServerVerifier {
 
 test_for_each_provider! {
     use std::prelude::v1::*;
+    use std::sync::Arc;
     use std::{println, vec};
 
     use pki_types::pem::PemObject;
@@ -309,7 +310,6 @@ test_for_each_provider! {
 
     use super::{VerifierBuilderError, WebPkiServerVerifier};
     use crate::RootCertStore;
-    use crate::sync::Arc;
 
     fn load_crls(crls_der: &[&[u8]]) -> Vec<CertificateRevocationListDer<'static>> {
         crls_der

@@ -21,9 +21,9 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
    "rustls",
 -  # benchmarking tool
 -  "rustls-bench",
-   # rustls cryptography provider for fuzzing
-   "rustls-fuzzing-provider",
  ]
+ 
+ ## Deliberately not included in `members`:
 @@ -37,7 +33,6 @@
  async-std = { version = "1.12.0", features = ["attributes"] }
  async-trait = "0.1.74"
@@ -34,7 +34,7 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
  byteorder = "1.4.3"
 --- a/rustls/Cargo.toml
 +++ b/rustls/Cargo.toml
-@@ -38,7 +38,6 @@
+@@ -37,7 +37,6 @@
  
  [dev-dependencies]
  base64 = { workspace = true }
@@ -42,9 +42,9 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
  env_logger = { workspace = true }
  hex = { workspace = true }
  log = { workspace = true }
-@@ -50,12 +49,6 @@
+@@ -48,12 +47,6 @@
  time = { workspace = true }
- x509-parser = { workspace = true }
+ rustls-native-certs = { workspace = true }
  
 -[[bench]]
 -name = "benchmarks"

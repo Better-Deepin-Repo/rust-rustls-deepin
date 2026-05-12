@@ -18,6 +18,6 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
    "rustls-bench",
 -  # rustls cryptography provider integration tests
 -  "rustls-provider-test",
-   # rustls cryptography provider for fuzzing
-   "rustls-fuzzing-provider",
  ]
+ 
+ ## Deliberately not included in `members`:
