@@ -1,0 +1,34 @@
+#!/usr/bin/make -f
+
+# resolve DEB_DISTRIBUTION
+include /usr/share/dpkg/pkg-info.mk
+
+# resolve if release is experimental
+DEB_SUITE_EXP = $(filter experimental% UNRELEASED,$(DEB_DISTRIBUTION))
+
+%:
+	dh $@
+
+override_dh_auto_test:
+	dh_auto_test --buildsystem rust -- --no-fail-fast $(if $(DEB_SUITE_EXP), || true)
+
+# cleanup after test
+execute_after_dh_auto_test:
+	rm -rf rustls/sslkeylogfile.txt
+
+# mangle system-shared code to use system-shared testdata, test-ca and fuzz data
+execute_after_dh_auto_install:
+	perl -pi -e 's,(?:\.\./)+testdata,/usr/share/rust-rustls/testdata,' \
+	 debian/librust-*-dev/usr/share/cargo/registry/*/src/crypto/ring/sign.rs \
+	 debian/librust-*-dev/usr/share/cargo/registry/*/src/crypto/tls12.rs \
+	 debian/librust-*-dev/usr/share/cargo/registry/*/src/msgs/deframer/handshake.rs \
+	 debian/librust-*-dev/usr/share/cargo/registry/*/src/msgs/deframer/mod.rs \
+	 debian/librust-*-dev/usr/share/cargo/registry/*/src/msgs/handshake_test.rs \
+	 debian/librust-*-dev/usr/share/cargo/registry/*/src/msgs/mod.rs \
+	 debian/librust-*-dev/usr/share/cargo/registry/*/src/webpki/client_verifier.rs
+	perl -pi -e 's,(?:\.\./)+test-ca,/usr/share/rust-rustls/test-ca,' \
+	 debian/librust-*-dev/usr/share/cargo/registry/*/src/webpki/client_verifier.rs \
+	 debian/librust-*-dev/usr/share/cargo/registry/*/src/webpki/server_verifier.rs \
+	 debian/librust-*-dev/usr/share/cargo/registry/*/tests/common/mod.rs
+	perl -pi -e 's,(?:\.\./)+fuzz,/usr/share/rust-rustls/fuzz,' \
+	 debian/librust-*-dev/usr/share/cargo/registry/*/src/msgs/message_test.rs

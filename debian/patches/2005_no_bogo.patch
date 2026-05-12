@@ -1,0 +1,16 @@
+Description: avoid extensive testsuite crate bogo
+Author: Jonas Smedegaard <dr@jones.dk>
+Forwarded: not-needed
+Last-Update: 2025-03-23
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -1,7 +1,5 @@
+ [workspace]
+ members = [
+-  # Bogo test shim
+-  "bogo",
+   # Network-based tests
+   "connect-tests",
+   # tests and example code

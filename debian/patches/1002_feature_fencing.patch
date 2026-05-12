@@ -1,0 +1,50 @@
+Description: fence tests by needed features
+  * Running tests with feature "ring" but not "std"
+    fails in call to `UnixTime::now()`
+  * Running tests with feature "hashbrown" but not "std"
+    fails to infer type
+Author: Jonas Smedegaard <dr@jones.dk>
+Last-Update: 2025-02-14
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/rustls/src/client/handy.rs
++++ b/rustls/src/client/handy.rs
+@@ -267,6 +267,7 @@
+     use crate::{DigitallySignedStruct, Error, SignatureScheme, sign};
+ 
+     #[test]
++    #[cfg(feature = "std")]
+     fn test_noclientsessionstorage_does_nothing() {
+         let c = NoClientSessionStorage {};
+         let name = ServerName::try_from("example.com").unwrap();
+--- a/rustls/src/server/handy.rs
++++ b/rustls/src/server/handy.rs
+@@ -24,7 +24,7 @@
+     }
+ }
+ 
+-#[cfg(any(feature = "std", feature = "hashbrown"))]
++#[cfg(any(feature = "std", all(feature = "default", feature = "hashbrown")))]
+ mod cache {
+     use alloc::vec::Vec;
+     use core::fmt::{Debug, Formatter};
+@@ -144,7 +144,7 @@
+     }
+ }
+ 
+-#[cfg(any(feature = "std", feature = "hashbrown"))]
++#[cfg(any(feature = "std", all(feature = "default", feature = "hashbrown")))]
+ pub use cache::ServerSessionMemoryCache;
+ 
+ /// Something which never produces tickets.
+--- a/rustls/src/lib.rs
++++ b/rustls/src/lib.rs
+@@ -635,7 +635,7 @@
+     pub use builder::WantsServerCert;
+     #[cfg(any(feature = "std", feature = "hashbrown"))]
+     pub use handy::ResolvesServerCertUsingSni;
+-    #[cfg(any(feature = "std", feature = "hashbrown"))]
++    #[cfg(any(feature = "std", all(feature = "default", feature = "hashbrown")))]
+     pub use handy::ServerSessionMemoryCache;
+     pub use handy::{AlwaysResolvesServerRawPublicKeys, NoServerSessionStorage};
+     pub use server_conn::{

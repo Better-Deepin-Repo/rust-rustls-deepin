@@ -1,0 +1,303 @@
+Description: use crate rustls-native-certs (not webpki-roots)
+Author: Jonas Smedegaard <dr@jones.dk>
+Forwarded: not-needed
+Last-Update: 2023-08-14
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -87,7 +87,7 @@
+ tikv-jemallocator = "0.6"
+ tokio = { version = "1.34", features = ["io-util", "macros", "net", "rt"] }
+ webpki = { package = "rustls-webpki", version = "0.103", features = ["alloc"], default-features = false }
+-webpki-roots = "0.26"
++rustls-native-certs = "0.6"
+ x25519-dalek = "2"
+ x509-parser = "0.17"
+ zeroize = "1.7"
+--- a/examples/Cargo.toml
++++ b/examples/Cargo.toml
+@@ -17,4 +17,4 @@
+ rustls = { path = "../rustls", features = ["logging"] }
+ serde = { workspace = true }
+ tokio = { workspace = true }
+-webpki-roots = { workspace = true }
++rustls-native-certs = { workspace = true }
+--- a/examples/src/bin/ech-client.rs
++++ b/examples/src/bin/ech-client.rs
+@@ -47,6 +47,7 @@
+ use rustls::crypto::hpke::Hpke;
+ use rustls::pki_types::pem::PemObject;
+ use rustls::pki_types::{CertificateDer, EchConfigListBytes, ServerName};
++use rustls_native_certs::load_native_certs;
+ 
+ #[tokio::main]
+ async fn main() -> Result<(), Box<dyn Error>> {
+@@ -107,7 +108,12 @@
+             root_store
+         }
+         None => RootCertStore {
+-            roots: webpki_roots::TLS_SERVER_ROOTS.into(),
++            let mut root_store = rustls::RootCertStore::empty();
++            for cert in load_native_certs().expect("could not load platform certs") {
++                root_store.add(CertificateDer::from_slice(&cert.0))
++                    .expect("could not add certificate");
++            };
++            root_store
+         },
+     };
+ 
+--- a/examples/src/bin/limitedclient.rs
++++ b/examples/src/bin/limitedclient.rs
+@@ -7,13 +7,15 @@
+ use std::sync::Arc;
+ 
+ use rustls::crypto::{CryptoProvider, aws_lc_rs as provider};
++use rustls::pki_types::CertificateDer;
++use rustls_native_certs::load_native_certs;
+ 
+ fn main() {
+-    let root_store = rustls::RootCertStore::from_iter(
+-        webpki_roots::TLS_SERVER_ROOTS
+-            .iter()
+-            .cloned(),
+-    );
++    let mut root_store = rustls::RootCertStore::empty();
++    for cert in load_native_certs().expect("could not load platform certs") {
++        root_store.add(CertificateDer::from_slice(&cert.0))
++            .expect("could not add certificate");
++    };
+ 
+     let config = rustls::ClientConfig::builder_with_provider(
+         CryptoProvider {
+--- a/examples/src/bin/simple_0rtt_client.rs
++++ b/examples/src/bin/simple_0rtt_client.rs
+@@ -22,6 +22,7 @@
+ use rustls::RootCertStore;
+ use rustls::pki_types::pem::PemObject;
+ use rustls::pki_types::{CertificateDer, ServerName};
++use rustls_native_certs::load_native_certs;
+ 
+ fn start_connection(config: &Arc<rustls::ClientConfig>, domain_name: &str, port: u16) {
+     let server_name = ServerName::try_from(domain_name)
+@@ -93,11 +94,10 @@
+                 .map(|result| result.unwrap()),
+         );
+     } else {
+-        root_store.extend(
+-            webpki_roots::TLS_SERVER_ROOTS
+-                .iter()
+-                .cloned(),
+-        )
++        for cert in load_native_certs().expect("could not load platform certs") {
++            root_store.add(CertificateDer::from_slice(&cert.0))
++                .expect("could not add certificate");
++        };
+     }
+ 
+     let mut config = rustls::ClientConfig::builder()
+--- a/examples/src/bin/simpleclient.rs
++++ b/examples/src/bin/simpleclient.rs
+@@ -12,11 +12,15 @@
+ use std::net::TcpStream;
+ use std::sync::Arc;
+ 
++use rustls::pki_types::CertificateDer;
+ use rustls::RootCertStore;
++use rustls_native_certs::load_native_certs;
+ 
+ fn main() {
+-    let root_store = RootCertStore {
+-        roots: webpki_roots::TLS_SERVER_ROOTS.into(),
++    let mut root_store = RootCertStore::empty();
++    for cert in load_native_certs().expect("could not load platform certs") {
++        root_store.add(CertificateDer::from_slice(&cert.0))
++            .expect("could not add certificate");
+     };
+     let mut config = rustls::ClientConfig::builder()
+         .with_root_certificates(root_store)
+--- a/examples/src/bin/tlsclient-mio.rs
++++ b/examples/src/bin/tlsclient-mio.rs
+@@ -30,6 +30,7 @@
+ use rustls::crypto::{CryptoProvider, aws_lc_rs as provider};
+ use rustls::pki_types::pem::PemObject;
+ use rustls::pki_types::{CertificateDer, PrivateKeyDer, ServerName};
++use rustls_native_certs::load_native_certs;
+ 
+ const CLIENT: mio::Token = mio::Token(0);
+ 
+@@ -207,7 +208,7 @@
+ /// basic HTTP GET request for /.
+ ///
+ /// If --cafile is not supplied, a built-in set of CA certificates
+-/// are used from the webpki-roots crate.
++/// are used from the rustls-native-certs crate.
+ #[derive(Debug, Parser)]
+ struct Args {
+     /// Connect to this port
+@@ -402,11 +403,10 @@
+                 .map(|result| result.unwrap()),
+         );
+     } else {
+-        root_store.extend(
+-            webpki_roots::TLS_SERVER_ROOTS
+-                .iter()
+-                .cloned(),
+-        );
++        for cert in load_native_certs().expect("could not load platform certs") {
++            root_store.add(CertificateDer::from_slice(&cert.0))
++                .expect("could not add certificate");
++        };
+     }
+ 
+     let suites = if !args.suite.is_empty() {
+--- a/examples/src/bin/unbuffered-async-client.rs
++++ b/examples/src/bin/unbuffered-async-client.rs
+@@ -10,12 +10,14 @@
+ #[cfg(feature = "async-std")]
+ use async_std::net::TcpStream;
+ use rustls::client::{ClientConnectionData, UnbufferedClientConnection};
++use rustls::pki_types::CertificateDer;
+ use rustls::unbuffered::{
+     AppDataRecord, ConnectionState, EncodeError, EncryptError, InsufficientSizeError,
+     UnbufferedStatus, WriteTraffic,
+ };
+ use rustls::version::TLS13;
+ use rustls::{ClientConfig, RootCertStore};
++use rustls_native_certs::load_native_certs;
+ #[cfg(not(feature = "async-std"))]
+ use tokio::io::{AsyncReadExt, AsyncWriteExt};
+ #[cfg(not(feature = "async-std"))]
+@@ -24,8 +26,10 @@
+ #[cfg_attr(not(feature = "async-std"), tokio::main(flavor = "current_thread"))]
+ #[cfg_attr(feature = "async-std", async_std::main)]
+ async fn main() -> Result<(), Box<dyn Error>> {
+-    let root_store = RootCertStore {
+-        roots: webpki_roots::TLS_SERVER_ROOTS.into(),
++    let mut root_store = RootCertStore::empty();
++    for cert in load_native_certs().expect("could not load platform certs") {
++        root_store.add(CertificateDer::from_slice(&cert.0))
++            .expect("could not add certificate");
+     };
+ 
+     let config = ClientConfig::builder_with_protocol_versions(&[&TLS13])
+--- a/examples/src/bin/unbuffered-client.rs
++++ b/examples/src/bin/unbuffered-client.rs
+@@ -11,12 +11,16 @@
+     AppDataRecord, ConnectionState, EncodeError, EncryptError, InsufficientSizeError,
+     UnbufferedStatus, WriteTraffic,
+ };
++use rustls::pki_types::CertificateDer;
+ use rustls::version::TLS13;
+ use rustls::{ClientConfig, RootCertStore};
++use rustls_native_certs::load_native_certs;
+ 
+ fn main() -> Result<(), Box<dyn Error>> {
+-    let root_store = RootCertStore {
+-        roots: webpki_roots::TLS_SERVER_ROOTS.into(),
++    let mut root_store = RootCertStore::empty();
++    for cert in load_native_certs().expect("could not load platform certs") {
++        root_store.add(CertificateDer::from_slice(&cert.0))
++            .expect("could not add certificate");
+     };
+ 
+     let mut config = ClientConfig::builder_with_protocol_versions(&[&TLS13])
+--- a/provider-example/Cargo.toml
++++ b/provider-example/Cargo.toml
+@@ -26,7 +26,7 @@
+ [dev-dependencies]
+ env_logger = { workspace = true }
+ rcgen = { workspace = true }
+-webpki-roots = { workspace = true }
++rustls-native-certs = { workspace = true }
+ 
+ [features]
+ default = ["std"]
+--- a/provider-example/examples/client.rs
++++ b/provider-example/examples/client.rs
+@@ -2,14 +2,16 @@
+ use std::net::TcpStream;
+ use std::sync::Arc;
+ 
++use rustls_native_certs::load_native_certs;
++
+ fn main() {
+     env_logger::init();
+ 
+-    let root_store = rustls::RootCertStore::from_iter(
+-        webpki_roots::TLS_SERVER_ROOTS
+-            .iter()
+-            .cloned(),
+-    );
++    let mut root_store = rustls::RootCertStore::empty();
++    for cert in load_native_certs().expect("could not load platform certs") {
++        root_store.add(CertificateDer::from_slice(&cert.0))
++            .expect("could not add certificate");
++    };
+ 
+     let config =
+         rustls::ClientConfig::builder_with_provider(rustls_provider_example::provider().into())
+--- a/rustls/Cargo.toml
++++ b/rustls/Cargo.toml
+@@ -57,10 +57,10 @@
+ macro_rules_attribute = { workspace = true }
+ num-bigint = { workspace = true }
+ rcgen = { workspace = true }
++rustls-native-certs = { workspace = true }
+ serde = { workspace = true }
+ serde_json = { workspace = true }
+ time = { workspace = true }
+-webpki-roots = { workspace = true }
+ x509-parser = { workspace = true }
+ 
+ [[bench]]
+--- a/rustls/src/lib.rs
++++ b/rustls/src/lib.rs
+@@ -170,14 +170,15 @@
+ //! ```rust
+ //! # #[cfg(feature = "aws_lc_rs")] {
+ //! # use rustls;
++//! # use rustls_native_certs;
+ //! # use webpki;
+ //! # use std::sync::Arc;
+ //! # rustls::crypto::aws_lc_rs::default_provider().install_default();
+-//! # let root_store = rustls::RootCertStore::from_iter(
+-//! #  webpki_roots::TLS_SERVER_ROOTS
+-//! #      .iter()
+-//! #      .cloned(),
+-//! # );
++//! # let mut root_store = rustls::RootCertStore::empty();
++//! # for cert in load_native_certs().expect("could not load platform certs") {
++//! #     root_store.add(CertificateDer::from_slice(&cert.0))
++//! #         .expect("could not add certificate");
++//! # };
+ //! # let config = rustls::ClientConfig::builder()
+ //! #     .with_root_certificates(root_store)
+ //! #     .with_no_client_auth();
+--- a/rustls/src/verifybench.rs
++++ b/rustls/src/verifybench.rs
+@@ -7,7 +7,7 @@
+ use std::prelude::v1::*;
+ 
+ use pki_types::{CertificateDer, ServerName, UnixTime};
+-use webpki_roots;
++use rustls_native_certs::load_native_certs;
+ 
+ use crate::crypto::CryptoProvider;
+ use crate::verify::ServerCertVerifier;
+@@ -187,11 +187,10 @@
+ impl Context {
+     fn new(provider: CryptoProvider, domain: &'static str, certs: &[&'static [u8]]) -> Self {
+         let mut roots = RootCertStore::empty();
+-        roots.extend(
+-            webpki_roots::TLS_SERVER_ROOTS
+-                .iter()
+-                .cloned(),
+-        );
++        for cert in load_native_certs().expect("could not load platform certs") {
++            roots.add(CertificateDer::from_slice(&cert.0))
++                .expect("could not add certificate");
++        };
+         Self {
+             server_name: domain.try_into().unwrap(),
+             chain: certs

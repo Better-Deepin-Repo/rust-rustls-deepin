@@ -1,0 +1,13 @@
+[package]
+name = "bogo"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+base64 = { workspace = true }
+env_logger = { workspace = true }
+nix = { version = "0.29", default-features = false, features = ["signal"] }
+rustls = { path = "../rustls", features = ["ring", "tls12"] }
+
+[features]
+default = []

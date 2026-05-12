@@ -1,0 +1,3 @@
+fuzz/* usr/share/rust-rustls/fuzz
+rustls/src/testdata/* usr/share/rust-rustls/testdata
+test-ca/* usr/share/rust-rustls/test-ca

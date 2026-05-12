@@ -1,0 +1,91 @@
+Source: rust-rustls
+Section: rust
+Priority: optional
+Build-Depends:
+ ca-certificates <!nocheck>,
+ debhelper-compat (= 13),
+ dh-sequence-rust,
+ librust-asn1-dev (<< 0.21),
+ librust-async-std-1+attributes-dev,
+ librust-async-std-1+default-dev,
+ librust-base64-0.22+default-dev,
+ librust-brotli-dev (<< 8),
+ librust-brotli-decompressor-4+default-dev,
+ librust-clap-4+default-dev,
+ librust-clap-4+derive-dev,
+ librust-clap-4+env-dev,
+ librust-env-logger-0.11+default-dev,
+ librust-hashbrown-0.14+ahash-dev,
+ librust-hashbrown-0.14+inline-more-dev,
+ librust-hex-0.4+default-dev,
+ librust-log-0.4+default-dev,
+ librust-mio-1+net-dev,
+ librust-mio-1+os-poll-dev,
+ librust-num-bigint-0.4+default-dev,
+ librust-once-cell-1+alloc-dev,
+ librust-once-cell-1+race-dev,
+ librust-openssl-0.10+default-dev,
+ librust-rcgen-0.13+default-dev,
+ librust-rcgen-0.13+pem-dev,
+ librust-regex-1+default-dev,
+ librust-ring-0.17+default-dev,
+ librust-rustls-pki-types-1+alloc-dev,
+ librust-rustls-pki-types-1+default-dev,
+ librust-rustls-native-certs-0.6+default-dev,
+ librust-rustls-webpki-0.102+alloc-dev,
+ librust-serde-1+default-dev,
+ librust-serde-1+derive-dev,
+ librust-serde-json-1+default-dev,
+ librust-subtle-2-dev,
+ librust-tikv-jemallocator-0.6+default-dev,
+ librust-time-0.3-dev,
+ librust-x509-parser-0.17+default-dev,
+ librust-zeroize-1+default-dev,
+Maintainer: Jonas Smedegaard <dr@jones.dk>
+Standards-Version: 4.7.2
+Vcs-Git: https://salsa.debian.org/debian/rust-rustls.git
+Vcs-Browser: https://salsa.debian.org/debian/rust-rustls
+Homepage: https://github.com/rustls/rustls
+Rules-Requires-Root: no
+
+Package: librust-rustls-dev
+Architecture: all
+Multi-Arch: foreign
+Depends:
+ librust-brotli-dev (<< 8),
+ librust-brotli-decompressor-4+default-dev,
+ librust-hashbrown-0.14+ahash-dev,
+ librust-hashbrown-0.14+inline-more-dev,
+ librust-log-0.4+default-dev,
+ librust-once-cell-1+alloc-dev,
+ librust-once-cell-1+race-dev,
+ librust-ring-0.17+default-dev,
+ librust-rustls-pki-types-1+alloc-dev,
+ librust-rustls-pki-types-1+default-dev,
+ librust-rustls-webpki-0.102+alloc-dev,
+ librust-subtle-2-dev,
+ librust-zeroize-1+default-dev,
+ ${misc:Depends},
+Provides:
+ librust-rustls-0.23+brotli-dev (= ${binary:Version}),
+ librust-rustls-0.23+custom-provider-dev (= ${binary:Version}),
+# librust-rustls-0.23+default-dev (= ${binary:Version}),
+ librust-rustls-0.23+hashbrown-dev (= ${binary:Version}),
+ librust-rustls-0.23+logging-dev (= ${binary:Version}),
+ librust-rustls-0.23+ring-dev (= ${binary:Version}),
+ librust-rustls-0.23+std-dev (= ${binary:Version}),
+ librust-rustls-0.23+tls12-dev (= ${binary:Version}),
+ librust-rustls-0.23-dev (= ${binary:Version}),
+ librust-rustls-0.23.25-dev (= ${binary:Version}),
+Description: modern TLS library written in Rust - Rust source code
+ Rustls is a modern TLS library written in Rust.
+ It uses ring for cryptography
+ and webpki for certificate verification.
+ .
+ Ring is a Rust library implementing safe, fast, small crypto
+ using Rust with BoringSSL's cryptography primitives.
+ .
+ Webpki is a Rust library to validate Web PKI (TLS/SSL) certificates.
+ .
+ This package contains the source for the Rust rustls crate,
+ for use with cargo.

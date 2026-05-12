@@ -1,0 +1,23 @@
+Description: avoid testing-only not-in-Debian crate hpke-rs
+Author: Jonas Smedegaard <dr@jones.dk>
+Forwarded: not-needed
+Last-Update: 2024-12-17
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -10,14 +10,10 @@
+   "examples",
+   # Tests that require OpenSSL
+   "openssl-tests",
+-  # example of custom provider
+-  "provider-example",
+   # the main library and tests
+   "rustls",
+   # benchmarking tool
+   "rustls-bench",
+-  # rustls cryptography provider integration tests
+-  "rustls-provider-test",
+   # rustls cryptography provider for fuzzing
+   "rustls-fuzzing-provider",
+ ]

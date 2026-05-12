@@ -1,0 +1,317 @@
+Description: avoid not-in-Debian crate macro_rules_attribute
+Author: Jonas Smedegaard <dr@jones.dk>
+Forwarded: not-needed
+Last-Update: 2024-12-17
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -56,7 +56,6 @@
+ hpke-rs-rust-crypto = "0.2"
+ itertools = ">= 0.13.0, <= 0.14"
+ log = { version = "0.4.8" }
+-macro_rules_attribute = "0.2"
+ mio = { version = "1", features = ["net", "os-poll"] }
+ num-bigint = "0.4.4"
+ once_cell = { version = "1.16", default-features = false, features = ["alloc", "race"] }
+--- a/rustls/Cargo.toml
++++ b/rustls/Cargo.toml
+@@ -49,7 +49,6 @@
+ env_logger = { workspace = true }
+ hex = { workspace = true }
+ log = { workspace = true }
+-macro_rules_attribute = { workspace = true }
+ num-bigint = { workspace = true }
+ rcgen = { workspace = true }
+ rustls-native-certs = { workspace = true }
+--- a/rustls/src/client/handy.rs
++++ b/rustls/src/client/handy.rs
+@@ -244,15 +244,13 @@
+     }
+ }
+ 
+-#[cfg(test)]
+-#[macro_rules_attribute::apply(test_for_each_provider)]
+-mod tests {
++test_for_each_provider! {
+     use std::prelude::v1::*;
+ 
+     use pki_types::{ServerName, UnixTime};
+ 
+     use super::NoClientSessionStorage;
+-    use super::provider::cipher_suite;
++    use provider::cipher_suite;
+     use crate::client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier};
+     use crate::client::{ClientSessionStore, ResolvesClientCert};
+     use crate::msgs::base::PayloadU16;
+@@ -306,8 +304,7 @@
+             c.remove_tls12_session(&name);
+         }
+ 
+-        let SupportedCipherSuite::Tls13(tls13_suite) = cipher_suite::TLS13_AES_256_GCM_SHA384
+-        else {
++        let SupportedCipherSuite::Tls13(tls13_suite) = cipher_suite::TLS13_AES_256_GCM_SHA384 else {
+             unreachable!();
+         };
+         c.insert_tls13_ticket(
+--- a/rustls/src/crypto/ring/quic.rs
++++ b/rustls/src/crypto/ring/quic.rs
+@@ -212,14 +212,13 @@
+     }
+ }
+ 
+-#[cfg(test)]
+-#[macro_rules_attribute::apply(test_for_each_provider)]
+-mod tests {
++test_for_each_provider! {
+     use std::dbg;
+ 
+-    use super::provider::tls13::{
++    use provider::tls13::{
+         TLS13_AES_128_GCM_SHA256_INTERNAL, TLS13_CHACHA20_POLY1305_SHA256_INTERNAL,
+     };
++
+     use crate::common_state::Side;
+     use crate::crypto::tls13::OkmBlock;
+     use crate::quic::*;
+--- a/rustls/src/hash_hs.rs
++++ b/rustls/src/hash_hs.rs
+@@ -183,10 +183,9 @@
+     }
+ }
+ 
+-#[cfg(test)]
+-#[macro_rules_attribute::apply(test_for_each_provider)]
+-mod tests {
+-    use super::provider::hash::SHA256;
++test_for_each_provider! {
++    use provider::hash::SHA256;
++
+     use super::*;
+     use crate::crypto::hash::Hash;
+     use crate::enums::{HandshakeType, ProtocolVersion};
+--- a/rustls/src/lib.rs
++++ b/rustls/src/lib.rs
+@@ -412,7 +412,6 @@
+     pub(crate) use {_warn as warn, debug, error, trace};
+ }
+ 
+-#[cfg(test)]
+ #[macro_use]
+ mod test_macros;
+ 
+--- a/rustls/src/suites.rs
++++ b/rustls/src/suites.rs
+@@ -240,16 +240,14 @@
+     },
+ }
+ 
+-#[cfg(test)]
+-#[macro_rules_attribute::apply(test_for_each_provider)]
+-mod tests {
++test_for_each_provider! {
+     use std::println;
+ 
+-    use super::provider::tls13::*;
++    use provider::tls13::*;
+ 
+     #[test]
+     fn test_scs_is_debug() {
+-        println!("{:?}", super::provider::ALL_CIPHER_SUITES);
++        println!("{:?}", provider::ALL_CIPHER_SUITES);
+     }
+ 
+     #[test]
+--- a/rustls/src/test_macros.rs
++++ b/rustls/src/test_macros.rs
+@@ -5,22 +5,17 @@
+ /// The selected provider module is bound as `provider`; you can rely on this
+ /// having the union of the items common to the `crypto::ring` and
+ /// `crypto::aws_lc_rs` modules.
+-#[cfg(test)]
+ macro_rules! test_for_each_provider {
+     ($($tt:tt)+) => {
+-        #[cfg(feature = "ring")]
++        #[cfg(all(test, feature = "ring"))]
+         mod test_with_ring {
+             use crate::crypto::ring as provider;
+-            #[allow(unused_imports)]
+-            use super::*;
+             $($tt)+
+         }
+ 
+-        #[cfg(feature = "aws_lc_rs")]
++        #[cfg(all(test, feature = "aws_lc_rs"))]
+         mod test_with_aws_lc_rs {
+             use crate::crypto::aws_lc_rs as provider;
+-            #[allow(unused_imports)]
+-            use super::*;
+             $($tt)+
+         }
+     };
+@@ -31,41 +26,32 @@
+ /// The selected provider module is bound as `provider`; you can rely on this
+ /// having the union of the items common to the `crypto::ring` and
+ /// `crypto::aws_lc_rs` modules.
+-#[cfg(bench)]
+ macro_rules! bench_for_each_provider {
+     ($($tt:tt)+) => {
+-        #[cfg(feature = "ring")]
++        #[cfg(all(bench, feature = "ring"))]
+         mod bench_with_ring {
+             use crate::crypto::ring as provider;
+-            #[allow(unused_imports)]
+-            use super::*;
+             $($tt)+
+         }
+ 
+-        #[cfg(feature = "aws_lc_rs")]
++        #[cfg(all(bench, feature = "aws_lc_rs"))]
+         mod bench_with_aws_lc_rs {
+             use crate::crypto::aws_lc_rs as provider;
+-            #[allow(unused_imports)]
+-            use super::*;
+             $($tt)+
+         }
+     };
+ }
+ 
+-#[cfg(test)]
+-#[macro_rules_attribute::apply(test_for_each_provider)]
+-mod tests {
++test_for_each_provider! {
+     #[test]
+     fn test_each_provider() {
+-        std::println!("provider is {:?}", super::provider::default_provider());
++        std::println!("provider is {:?}", provider::default_provider());
+     }
+ }
+ 
+-#[cfg(all(test, bench))]
+-#[macro_rules_attribute::apply(bench_for_each_provider)]
+-mod benchmarks {
++bench_for_each_provider! {
+     #[bench]
+     fn bench_each_provider(b: &mut test::Bencher) {
+-        b.iter(|| super::provider::default_provider());
++        b.iter(|| provider::default_provider());
+     }
+ }
+--- a/rustls/src/tls12/mod.rs
++++ b/rustls/src/tls12/mod.rs
+@@ -338,10 +338,9 @@
+ 
+ pub(crate) const DOWNGRADE_SENTINEL: [u8; 8] = [0x44, 0x4f, 0x57, 0x4e, 0x47, 0x52, 0x44, 0x01];
+ 
+-#[cfg(test)]
+-#[macro_rules_attribute::apply(test_for_each_provider)]
+-mod tests {
+-    use super::provider::kx_group::X25519;
++test_for_each_provider! {
++    use provider::kx_group::X25519;
++
+     use super::*;
+     use crate::common_state::{CommonState, Side};
+     use crate::msgs::handshake::{ServerEcdhParams, ServerKeyExchangeParams};
+--- a/rustls/src/tls13/key_schedule.rs
++++ b/rustls/src/tls13/key_schedule.rs
+@@ -898,15 +898,13 @@
+     f(expander, info)
+ }
+ 
+-#[cfg(test)]
+-#[macro_rules_attribute::apply(test_for_each_provider)]
+-mod tests {
++test_for_each_provider! {
+     use core::fmt::Debug;
+     use std::prelude::v1::*;
+     use std::vec;
+ 
+-    use super::provider::ring_like::aead;
+-    use super::provider::tls13::{
++    use provider::ring_like::aead;
++    use provider::tls13::{
+         TLS13_AES_128_GCM_SHA256_INTERNAL, TLS13_CHACHA20_POLY1305_SHA256_INTERNAL,
+     };
+     use super::{KeySchedule, SecretKind, derive_traffic_iv, derive_traffic_key};
+@@ -1086,14 +1084,12 @@
+     }
+ }
+ 
+-#[cfg(all(test, bench))]
+-#[macro_rules_attribute::apply(bench_for_each_provider)]
+-mod benchmarks {
++bench_for_each_provider! {
+     #[bench]
+     fn bench_sha256(b: &mut test::Bencher) {
+         use core::fmt::Debug;
+ 
+-        use super::provider::tls13::TLS13_CHACHA20_POLY1305_SHA256_INTERNAL;
++        use provider::tls13::TLS13_CHACHA20_POLY1305_SHA256_INTERNAL;
+         use super::{KeySchedule, SecretKind, derive_traffic_iv, derive_traffic_key};
+         use crate::KeyLog;
+ 
+@@ -1112,7 +1108,8 @@
+                 .expander_for_okm(&traffic_secret);
+             test::black_box(derive_traffic_key(
+                 traffic_secret_expander.as_ref(),
+-                TLS13_CHACHA20_POLY1305_SHA256_INTERNAL.aead_alg,
++                TLS13_CHACHA20_POLY1305_SHA256_INTERNAL
++                    .aead_alg,
+             ));
+             test::black_box(derive_traffic_iv(traffic_secret_expander.as_ref()));
+         }
+--- a/rustls/src/verifybench.rs
++++ b/rustls/src/verifybench.rs
+@@ -13,8 +13,7 @@
+ use crate::verify::ServerCertVerifier;
+ use crate::webpki::{RootCertStore, WebPkiServerVerifier};
+ 
+-#[macro_rules_attribute::apply(bench_for_each_provider)]
+-mod benchmarks {
++bench_for_each_provider! {
+     use super::{Context, provider};
+ 
+     #[bench]
+--- a/rustls/src/webpki/client_verifier.rs
++++ b/rustls/src/webpki/client_verifier.rs
+@@ -428,16 +428,14 @@
+     Deny,
+ }
+ 
+-#[cfg(test)]
+-#[macro_rules_attribute::apply(test_for_each_provider)]
+-mod tests {
++test_for_each_provider! {
+     use std::prelude::v1::*;
+     use std::{format, println, vec};
+ 
+     use pki_types::pem::PemObject;
+     use pki_types::{CertificateDer, CertificateRevocationListDer};
+ 
+-    use super::{WebPkiClientVerifier, provider};
++    use super::WebPkiClientVerifier;
+     use crate::RootCertStore;
+     use crate::server::VerifierBuilderError;
+     use crate::sync::Arc;
+--- a/rustls/src/webpki/server_verifier.rs
++++ b/rustls/src/webpki/server_verifier.rs
+@@ -300,16 +300,14 @@
+     }
+ }
+ 
+-#[cfg(test)]
+-#[macro_rules_attribute::apply(test_for_each_provider)]
+-mod tests {
++test_for_each_provider! {
+     use std::prelude::v1::*;
+     use std::{println, vec};
+ 
+     use pki_types::pem::PemObject;
+     use pki_types::{CertificateDer, CertificateRevocationListDer};
+ 
+-    use super::{VerifierBuilderError, WebPkiServerVerifier, provider};
++    use super::{VerifierBuilderError, WebPkiServerVerifier};
+     use crate::RootCertStore;
+     use crate::sync::Arc;
+ 

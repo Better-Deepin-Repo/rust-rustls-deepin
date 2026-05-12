@@ -1,0 +1,196 @@
+Description: skip flaky network-depending tests by default
+Author: Jonas Smedegaard <dr@jones.dk>
+Forwarded: not-needed
+Last-Update: 2023-08-14
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/connect-tests/tests/badssl.rs
++++ b/connect-tests/tests/badssl.rs
+@@ -12,6 +12,7 @@
+     }
+ 
+     #[test]
++    #[ignore]
+     fn no_cbc() {
+         connect("cbc.badssl.com")
+             .fails()
+@@ -21,6 +22,7 @@
+     }
+ 
+     #[test]
++    #[ignore]
+     fn no_rc4() {
+         connect("rc4.badssl.com")
+             .fails()
+@@ -30,6 +32,7 @@
+     }
+ 
+     #[test]
++    #[ignore]
+     fn expired() {
+         connect("expired.badssl.com")
+             .fails()
+@@ -39,6 +42,7 @@
+     }
+ 
+     #[test]
++    #[ignore]
+     fn wrong_host() {
+         connect("wrong.host.badssl.com")
+             .fails()
+@@ -48,6 +52,7 @@
+     }
+ 
+     #[test]
++    #[ignore]
+     fn self_signed() {
+         connect("self-signed.badssl.com")
+             .fails()
+@@ -57,6 +62,7 @@
+     }
+ 
+     #[test]
++    #[ignore]
+     fn no_dh() {
+         connect("dh2048.badssl.com")
+             .fails()
+@@ -66,6 +72,7 @@
+     }
+ 
+     #[test]
++    #[ignore]
+     fn mozilla_old() {
+         connect("mozilla-old.badssl.com")
+             .expect("<title>mozilla-old.badssl.com</title>")
+@@ -74,6 +81,7 @@
+     }
+ 
+     #[test]
++    #[ignore]
+     fn mozilla_inter() {
+         connect("mozilla-intermediate.badssl.com")
+             .expect("<title>mozilla-intermediate.badssl.com</title>")
+@@ -82,6 +90,7 @@
+     }
+ 
+     #[test]
++    #[ignore]
+     fn mozilla_modern() {
+         connect("mozilla-modern.badssl.com")
+             .expect("<title>mozilla-modern.badssl.com</title>")
+@@ -90,6 +99,7 @@
+     }
+ 
+     #[test]
++    #[ignore]
+     fn sha256() {
+         connect("sha256.badssl.com")
+             .expect("<title>sha256.badssl.com</title>")
+@@ -98,6 +108,7 @@
+     }
+ 
+     #[test]
++    #[ignore]
+     fn too_many_sans() {
+         connect("10000-sans.badssl.com")
+             .fails()
+@@ -108,6 +119,7 @@
+ 
+     #[ignore] // https://github.com/chromium/badssl.com/issues/530
+     #[test]
++    #[ignore]
+     fn rsa8192() {
+         connect("rsa8192.badssl.com")
+             .expect("<title>rsa8192.badssl.com</title>")
+@@ -116,6 +128,7 @@
+     }
+ 
+     #[test]
++    #[ignore]
+     fn sha1_2016() {
+         connect("sha1-2016.badssl.com")
+             .fails()
+@@ -126,6 +139,7 @@
+ 
+     mod danger {
+         #[test]
++        #[ignore]
+         fn self_signed() {
+             super::connect("self-signed.badssl.com")
+                 .insecure()
+--- a/connect-tests/tests/topsites.rs
++++ b/connect-tests/tests/topsites.rs
+@@ -17,61 +17,73 @@
+     }
+ 
+     #[test]
++    #[ignore]
+     fn joe() {
+         check("jbp.io")
+     }
+ 
+     #[test]
++    #[ignore]
+     fn google() {
+         check("google.com")
+     }
+ 
+     #[test]
++    #[ignore]
+     fn github() {
+         check("github.com")
+     }
+ 
+     #[test]
++    #[ignore]
+     fn aws() {
+         check("aws.amazon.com")
+     }
+ 
+     #[test]
++    #[ignore]
+     fn microsoft() {
+         check("www.microsoft.com")
+     }
+ 
+     #[test]
++    #[ignore]
+     fn wikipedia() {
+         check("www.wikipedia.org")
+     }
+ 
+     #[test]
++    #[ignore]
+     fn twitter() {
+         check("twitter.com")
+     }
+ 
+     #[test]
++    #[ignore]
+     fn facebook() {
+         check("www.facebook.com")
+     }
+ 
+     #[test]
++    #[ignore]
+     fn baidu() {
+         check("www.baidu.com")
+     }
+ 
+     #[test]
++    #[ignore]
+     fn netflix() {
+         check("www.netflix.com")
+     }
+ 
+     #[test]
++    #[ignore]
+     fn stackoverflow() {
+         check("stackoverflow.com")
+     }
+ 
+     #[test]
++    #[ignore]
+     fn apple() {
+         check("www.apple.com")
+     }

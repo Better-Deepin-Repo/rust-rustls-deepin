@@ -1,0 +1,3 @@
+#!/bin/sh
+
+licensecheck --check '.*' --recursive --copyright --deb-machine --ignore '^(admin/rustls-logo-web.png|audit/TLS-01-report.pdf|rustls/src/testdata/cert-github.0.der|rustls/tests/data/bug2227-clienthello\.bin|debian/(changelog|copyright(_hints)?))$' --lines 0 -- * > debian/copyright_hints

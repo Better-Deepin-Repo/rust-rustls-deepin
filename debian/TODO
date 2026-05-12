@@ -1,0 +1,6 @@
+  * provide features "aws_lc_rs", "aws-lc-rs" and "fips"
+    when needed crate is in Debian
+    * aws-lc-rs
+  * provide feature "zlib"
+    when needed crate is in Debian
+    * zlib-rs

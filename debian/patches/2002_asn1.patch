@@ -1,0 +1,18 @@
+Description: accept older branches of crate asn1
+Author: Jonas Smedegaard <dr@jones.dk>
+Forwarded: not-needed
+Bug-Debian: https://bugs.debian.org/1088744
+Last-Update: 2024-12-17
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -39,7 +39,7 @@
+ 
+ [workspace.dependencies]
+ anyhow = "1.0.73"
+-asn1 = "0.21"
++asn1 = ">= 0.17.0, <= 0.21"
+ async-std = { version = "1.12.0", features = ["attributes"] }
+ async-trait = "0.1.74"
+ aws-lc-rs = { version = "1.12", default-features = false }

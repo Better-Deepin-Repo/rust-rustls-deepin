@@ -1,0 +1,16 @@
+1002_feature_fencing.patch
+2001_native_certs.patch
+2002_asn1.patch
+2002_aws_lc_rs.patch
+2002_brotli.patch
+2002_hashbrown.patch
+2002_hickory-resolver.patch
+2002_hpke-rs.patch
+2002_itertools.patch
+2002_macro_rules_attribute.patch
+2002_rustls-webpki.patch
+2002_zlib-rs.patch
+2003_network_access.patch
+2004_no_feature_read_buf.patch
+2005_no_bench.patch
+2005_no_bogo.patch

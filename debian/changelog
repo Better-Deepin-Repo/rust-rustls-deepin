@@ -1,0 +1,612 @@
+rust-rustls (0.23.25+ds-1) unstable; urgency=medium
+
+  [ upstream ]
+  * new release(s)
+
+  [ Jonas Smedegaard ]
+  * bump project versions in virtual packages and autopkgtests
+  * update and unfuzz patches
+  * add patches 2002_itertools 2002_rustls-webpki
+    to use older branches of crates itertools rustls-webpki
+  * build- and autopkgtest-depend on package for crate x509-parser
+  * declare compliance with Debian Policy 4.7.2
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sun, 23 Mar 2025 17:44:41 +0100
+
+rust-rustls (0.23.20+ds-10) unstable; urgency=medium
+
+  * really fix patch 1002
+
+ -- Jonas Smedegaard <dr@jones.dk>  Wed, 19 Feb 2025 15:31:10 +0100
+
+rust-rustls (0.23.20+ds-9) unstable; urgency=medium
+
+  * fix patch 1002
+
+ -- Jonas Smedegaard <dr@jones.dk>  Tue, 18 Feb 2025 08:10:55 +0100
+
+rust-rustls (0.23.20+ds-8) unstable; urgency=medium
+
+  * extend patch 1002
+    to cover failure to infer type with feature hashbrown
+    but without feature default;
+    drop unused and now obsolete patch 1001
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sun, 16 Feb 2025 21:15:33 +0100
+
+rust-rustls (0.23.20+ds-7) unstable; urgency=medium
+
+  * update and disable possibly unneeded patch 1001
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sat, 15 Feb 2025 10:46:54 +0100
+
+rust-rustls (0.23.20+ds-6) unstable; urgency=medium
+
+  * fix patch 2001;
+    tighten build- and autopkgtest-dependencies
+    for crate rustls-native-certs
+  * fix patch 2002_aws_lc_rs
+  * build- and autopkgtest-depend on ca-certificates
+  * update install and code mangling for system-shared test assets
+  * add patch 1001 to explicitly declare type
+  * add patch 1002 to fence tests by needed features
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sat, 15 Feb 2025 10:10:43 +0100
+
+rust-rustls (0.23.20+ds-5) unstable; urgency=medium
+
+  * update watch file: mangle upstream version
+  * drop patch 2002_rcgen, obsoleted by Debian packaging changes
+    + bump build- and autopkgtest-dependencies for crate rcgen
+
+ -- Jonas Smedegaard <dr@jones.dk>  Fri, 14 Feb 2025 10:47:55 +0100
+
+rust-rustls (0.23.20+ds-4) experimental; urgency=medium
+
+  * update git-buildpackage config:
+    + filter out debian subdir
+    + improve usage comment
+  * add metadata about upstream project
+  * update watch file: tighten download URI mangling
+  * update copyright info: update coverage
+  * relax build- and autopkgtest-dependency
+    for crate rustls-native-certs
+
+ -- Jonas Smedegaard <dr@jones.dk>  Fri, 07 Feb 2025 18:44:16 +0100
+
+rust-rustls (0.23.20+ds-3) experimental; urgency=medium
+
+  * drop patch 2002_tikv-jemallocator,
+    obsoleted by Debian packaging changes
+  * tighten build- and autopkgtest-dependencies
+    for crates mio tikv-jemallocator
+  * relax build- and autopkgtest-dependency for crate asn1
+
+ -- Jonas Smedegaard <dr@jones.dk>  Thu, 16 Jan 2025 09:42:23 +0100
+
+rust-rustls (0.23.20+ds-2) experimental; urgency=medium
+
+  * update watch file:
+    + use Github API uri
+    + improve filename mangling
+  * drop patch 2002_env_logger, obsoleted by Debian package changes;
+    tighten build- and autopkgtest-dependencies
+    for crate rust-env-logger
+
+ -- Jonas Smedegaard <dr@jones.dk>  Wed, 01 Jan 2025 13:09:54 +0100
+
+rust-rustls (0.23.20+ds-1) experimental; urgency=medium
+
+  [ upstream ]
+  * new release(s)
+
+  [ Jonas Smedegaard ]
+  * avoid website when repackaging upstream source
+  * update and unfuzz patches
+  * update source helper tool copyright-check to skip a test file
+  * bump project versions in virtual packages and autopkgtests
+
+ -- Jonas Smedegaard <dr@jones.dk>  Tue, 17 Dec 2024 03:26:58 +0100
+
+rust-rustls (0.23.16-1) experimental; urgency=medium
+
+  [ upstream ]
+  * new release(s);
+    closes: bug#1085015, thanks to Blair Noctis and Sylvestre Ledru
+
+  [ Jonas Smedegaard ]
+  * bump project versions in virtual packages and autopkgtests
+  * update and unfuzz patches
+  * stop provide or autopkgtest locally mangled feature default
+  * tolerate test failures when targeted experimental
+  * drop superfluous README.Debian file,
+    mentioning testing-only diversion from upstream
+  * (build-)depend on packages
+    for crates brotli brotli-decompressor hashbrown once-cell
+    rustls-pki-types subtle zeroize (not sct);
+    build- and autopkgtest-depend
+    on packages for crates asn1 async-std clap hex num-bigint
+    openssl rcgen serde-json tikv-jemallocator time
+    (not bencher docopt rustls-pemfile serde-derive);
+    tighten (build-)dependencies for crate rustls-webpkit;
+    tighten build- and autopkgtest-dependencies for crate serde;
+    relax build- and autopkgtest-dependencies for crate env-logger;
+    provide and autopkgtest features
+    brotli custom-provider hashbrown ring std
+    (not dangerous-configuration default quic secret-extraction)
+
+ -- Jonas Smedegaard <dr@jones.dk>  Tue, 17 Dec 2024 02:12:01 +0100
+
+rust-rustls (0.21.12-6) unstable; urgency=medium
+
+  * fix make build-dependencies unconditional
+  * add patch 1002_base64 to accept newer branch of crate base64;
+    bump autopkgtest-dependencies for crate base64;
+    fix build-depend on package for crate base64;
+    closes: bug#1084375, thanks to Santiago Vila
+
+ -- Jonas Smedegaard <dr@jones.dk>  Wed, 16 Oct 2024 16:36:30 +0200
+
+rust-rustls (0.21.12-5) unstable; urgency=medium
+
+  * autopkgtest-depend on dh-rust (not dh-cargo);
+    closes: bug#1079557, thanks to Peter Michael Green
+  * stop mention dh-cargo in long description
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sat, 24 Aug 2024 17:58:00 +0200
+
+rust-rustls (0.21.12-4) unstable; urgency=medium
+
+  * add patch 1002 to accept newer branch of crate mio;
+    relax build- and autopkgtest-dependencies for crate mio;
+    closes: bug#1078508, thanks to Peter Green
+
+ -- Jonas Smedegaard <dr@jones.dk>  Wed, 14 Aug 2024 11:18:11 +0200
+
+rust-rustls (0.21.12-3) unstable; urgency=medium
+
+  * autopkgtest-depend on dh-rust (not dh-cargo)
+  * reduce autopkgtest to check single-feature tests only on amd64
+
+ -- Jonas Smedegaard <dr@jones.dk>  Wed, 31 Jul 2024 22:11:10 +0200
+
+rust-rustls (0.21.12-2) unstable; urgency=high
+
+  * simplify packaging;
+    build-depend on dh-sequence-rust
+    (not dh-cargo libstring-shellquote-perl)
+  * update and extend patch 1001
+  * urgency=high due to CVE-2024-32650 in previous release
+
+ -- Jonas Smedegaard <dr@jones.dk>  Wed, 17 Jul 2024 10:14:51 +0200
+
+rust-rustls (0.21.12-1) unstable; urgency=medium
+
+  [ upstream ]
+  * new release(s)
+    + don't specially handle unauthenticated close_notify alerts;
+      fixes CVE-2024-32650;
+      closes: bug#1069677, thanks to Moritz Mühlenhoff
+
+  [ Jonas Smedegaard ]
+  * update watch file: modernize source URI
+  * update copyright info: fix file path
+  * bump project versions in virtual packages and autopkgtests
+  * unfuzz patches
+  * declare compliance with Debian Policy 4.7.0
+
+ -- Jonas Smedegaard <dr@jones.dk>  Tue, 11 Jun 2024 15:15:06 +0200
+
+rust-rustls (0.21.10-1) unstable; urgency=medium
+
+  [ upstream ]
+  * new release
+
+  [ Jonas Smedegaard ]
+  * update dh-cargo fork
+  * update copyright info: update coverage
+  * bump project versions in virtual packages and autopkgtests
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sun, 14 Jan 2024 18:41:57 +0100
+
+rust-rustls (0.21.9-1) unstable; urgency=medium
+
+  * unfuzz patches
+  * bump project version in virtual packages and autopkgtests
+
+ -- Jonas Smedegaard <dr@jones.dk>  Mon, 27 Nov 2023 16:19:59 +0100
+
+rust-rustls (0.21.8-3.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Upload to unstable.
+
+ -- Peter Michael Green <plugwash@debian.org>  Tue, 07 Nov 2023 18:35:51 +0000
+
+rust-rustls (0.21.8-3) experimental; urgency=medium
+
+  * relax autopkgtest-dependencies for crate rustls
+  * add patch 1002 to consistently depend on branch v0.17 of crate ring
+
+ -- Jonas Smedegaard <dr@jones.dk>  Fri, 03 Nov 2023 23:54:17 +0100
+
+rust-rustls (0.21.8-2) experimental; urgency=medium
+
+  * tighten autopkgtest-dependencies for crate rustls
+
+ -- Jonas Smedegaard <dr@jones.dk>  Fri, 03 Nov 2023 09:04:48 +0100
+
+rust-rustls (0.21.8-1) experimental; urgency=medium
+
+  [ upstream ]
+  * new release;
+    closes: bug#1055116
+
+  [ Jonas Smedegaard ]
+  * bump project version in virtual packages and autopkgtests
+  * tighten (build-)dependencies for crates ring rustls-webpki
+  * unfuzz patches
+
+ -- Jonas Smedegaard <dr@jones.dk>  Thu, 02 Nov 2023 18:37:20 +0100
+
+rust-rustls (0.21.7-1) unstable; urgency=medium
+
+  [ upstream ]
+  * new release
+
+  [ Jonas Smedegaard ]
+  * unfuzz patches
+  * bump version for provided virtual packages and autopkgtest hints
+  * update dh-cargo fork
+
+ -- Jonas Smedegaard <dr@jones.dk>  Thu, 31 Aug 2023 11:03:31 +0200
+
+rust-rustls (0.21.6-4) unstable; urgency=medium
+
+  * source-only re-release;
+    closes: bug#1050296, thanks to Peter Green
+
+ -- Jonas Smedegaard <dr@jones.dk>  Wed, 23 Aug 2023 23:16:06 +0200
+
+rust-rustls (0.21.6-3) unstable; urgency=medium
+
+  * update DEP-3 patch headers
+  * update dh-cargo fork;
+    closes: bug#1047861, thanks to Lucas Nussbaum
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sat, 19 Aug 2023 19:28:42 +0200
+
+rust-rustls (0.21.6-2) unstable; urgency=medium
+
+  * drop patch 2002, obsoleted by Debian package changes;
+    update build- and autopkgtest-dependencies for crate env_logger
+  * fix patch 2004;
+    closes: bug#1043421, thanks to Peter Green
+
+ -- Jonas Smedegaard <dr@jones.dk>  Fri, 11 Aug 2023 01:42:55 +0200
+
+rust-rustls (0.21.6-1) unstable; urgency=medium
+
+  [ upstream ]
+  * new release
+
+  [ Jonas Smedegaard ]
+  * bump project version in virtual packages and autopkgtests
+  * unfuzz patches
+  * update dh-cargo fork
+  * tighten (build-)dependency for crate rustls-webpki
+  * add patch 2004 to drop nightly-only feature read_buf;
+    stop provide virtual package for or autopkgtest feature read_buf
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sat, 05 Aug 2023 12:56:18 +0200
+
+rust-rustls (0.21.5-5) unstable; urgency=medium
+
+  * fix autopkgtest-dependencies;
+    closes: bug#1042063, thanks to Peter Green
+
+ -- Jonas Smedegaard <dr@jones.dk>  Wed, 26 Jul 2023 10:06:43 +0200
+
+rust-rustls (0.21.5-4) unstable; urgency=medium
+
+  * fix: depend on package for crate rustls-webpki (not webpki)
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sat, 22 Jul 2023 11:04:42 +0200
+
+rust-rustls (0.21.5-3) unstable; urgency=medium
+
+  * check tests during build;
+    build-depend on packages for crate rustls-webpki
+
+ -- Jonas Smedegaard <dr@jones.dk>  Thu, 20 Jul 2023 20:39:32 +0200
+
+rust-rustls (0.21.5-2) experimental; urgency=medium
+
+  * fix: build-depend and autopkgtest-depend
+    on packages for crate rustls-webpki (not webpki)
+  * skip tests during build until crate rustls-webpki is in Debian
+
+ -- Jonas Smedegaard <dr@jones.dk>  Tue, 18 Jul 2023 15:01:31 +0200
+
+rust-rustls (0.21.5-1) experimental; urgency=medium
+
+  [ upstream ]
+  * new release(s)
+
+  [ Jonas Smedegaard ]
+  * tighten patch 2004 and add DEP-3 headers
+  * drop patch 2004, obsoleted by upstream changes
+  * update and unfuzz patches
+  * bump version for provided virtual packages and autopkgtest hints
+  * build-depend and autopkgtest-depend on package for crate bencher
+    (not criterion)
+  * add patch 2002
+    to relax dependencies to match system crate env_logger v0.9.3
+  * skip copyright-check binary der cryptofile test
+
+ -- Jonas Smedegaard <dr@jones.dk>  Tue, 18 Jul 2023 11:20:13 +0200
+
+rust-rustls (0.20.8-4.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Bump base64 dev-dependency to 0.21. (Closes: #1038420)
+
+ -- Peter Michael Green <plugwash@debian.org>  Sat, 24 Jun 2023 20:20:37 +0000
+
+rust-rustls (0.20.8-4) unstable; urgency=medium
+
+  * add patch 1001 to add feature constraints to tests
+
+ -- Jonas Smedegaard <dr@jones.dk>  Fri, 03 Feb 2023 14:57:58 +0100
+
+rust-rustls (0.20.8-3) unstable; urgency=medium
+
+  * provide virtual package for feature secret-extraction
+  * tighten autopkgtests
+  * stop superfluously provide virtual unversioned feature packages
+  * change binary library package to be arch-independent
+  * simplify build rules,
+    thanks to recent improvents in forked dh-cargo
+
+ -- Jonas Smedegaard <dr@jones.dk>  Thu, 02 Feb 2023 20:19:22 +0100
+
+rust-rustls (0.20.8-2) unstable; urgency=medium
+
+  * fix stop provide libstring-shellquote-perl;
+    thanks to Adrian Bunk
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sun, 29 Jan 2023 02:09:23 +0100
+
+rust-rustls (0.20.8-1) unstable; urgency=medium
+
+  [ upstream ]
+  * new release
+
+  [ Jonas Smedegaard ]
+  * declare compliance with Debian Policy 4.6.2
+  * bump version for provided virtual packages and autopkgtest hints
+  * update dh-cargo fork;
+    build-depend on libstring-shellquote-perl
+  * update copyright info: update coverage
+
+ -- Jonas Smedegaard <dr@jones.dk>  Thu, 26 Jan 2023 15:54:21 +0100
+
+rust-rustls (0.20.7-2) unstable; urgency=medium
+
+  * update dh-cargo fork,
+    to fix install only crate (not all source)
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sun, 04 Dec 2022 16:29:13 +0100
+
+rust-rustls (0.20.7-1) unstable; urgency=medium
+
+  [ upstream ]
+  * new release
+
+  [ Jonas Smedegaard ]
+  * add README.Debian,
+    to note patching to use rustls-native-certs instead of webpki-roots
+  * drop patches cherry-picked upstream now applied
+  * unfuzz patches
+  * bump version for provided virtual packages and autopkgtest hints
+  * merge virtual feature package into main binary package
+  * fix provide versioned virtual package for feature read-buf
+  * update dh-cargo fork;
+    build-depend on libstring-shellquote-perl
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sat, 03 Dec 2022 23:45:30 +0100
+
+rust-rustls (0.20.6-7) unstable; urgency=medium
+
+  * fix cleanup temporary file;
+    closes: 1016487, thanks to Chris Lamb
+  * add patch cherry-picked upstream
+    to delete unused dev-deps ct-logs in rustls-mio,
+    replacing patch 2002
+  * unfuzz patches
+  * stop overzealously provide versioned virtual packages
+
+ -- Jonas Smedegaard <dr@jones.dk>  Mon, 01 Aug 2022 20:30:13 +0200
+
+rust-rustls (0.20.6-6) unstable; urgency=medium
+
+  * omit root hidden files in fuzz and test-ca data
+  * update DEP-3 patch headers to include bug closures
+  * add patch cherry-picked upstream
+    to add some missing feature guards,
+    replacing patch 1001_tls12
+  * update dh-cargo fork
+
+ -- Jonas Smedegaard <dr@jones.dk>  Fri, 01 Jul 2022 13:29:28 +0200
+
+rust-rustls (0.20.6-5) unstable; urgency=medium
+
+  * cleanup after test
+  * mangle system-shared code
+    to use system-shared fuzz and test-ca data;
+    install test-ca data;
+    add autopkgtests
+  * add patch 1001
+    to fix fence tests requiring feature tls12
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sun, 26 Jun 2022 16:45:31 +0200
+
+rust-rustls (0.20.6-4) unstable; urgency=medium
+
+  * update dh-cargo fork
+  * stop explicitly build-depend on cargo libstd-rust-dev rustc:
+    handled by dh-cargo
+  * tighten autopkgtest dependencies
+  * fix declare virtual packages only once
+  * fix build-depend on
+    librust-criterion-0.3+default-dev
+    librust-env-logger-0.9+default-dev
+  * add patch 2001
+    to use crate rustls-native-certs (not webpki-roots);
+    (build-)depend on librust-rustls-native-certs-0.6+default-dev
+    (not librust-webpki-roots-0.22+default-dev)
+  * add patch 2002 to avoid not yet packaged crate ct-logs
+  * fix build-depend and autopkgtest-depend on
+    librust-docopt-1+default-dev librust-mio-0.8+default-dev
+    librust-mio-0.8+net-dev librust-mio-0.8+os-poll-dev
+    librust-regex-1+default-dev librust-serde-1+default-dev
+    librust-serde-derive-1+default-dev
+  * add patch 2003
+    to skip flaky network-depending tests by default
+  * drop autopkgtests altogether:
+    tests need source-only external dir ../test-ca
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sat, 25 Jun 2022 22:52:37 +0200
+
+rust-rustls (0.20.6-3) unstable; urgency=medium
+
+  * simple re-release targeted unstable
+
+ -- Jonas Smedegaard <dr@jones.dk>  Thu, 16 Jun 2022 19:47:41 +0200
+
+rust-rustls (0.20.6-2) experimental; urgency=medium
+
+  * fix tighten runtime dependencies (not only build-dependencies);
+    fix stop depend (only build-depend) on crate base64
+
+ -- Jonas Smedegaard <dr@jones.dk>  Wed, 15 Jun 2022 10:08:00 +0200
+
+rust-rustls (0.20.6-1) experimental; urgency=medium
+
+  [ upstream ]
+  * new release(s)
+
+  [ Jonas Smedegaard ]
+  * update dh-cargo fork
+  * update watch file: stop limit tracking to v0.19.x
+  * drop all patches: either applied or obsolete
+  * tighten build-dependency on crates ring sct webpki;
+    autotest-depend (not build-depend) on crate base64;
+    build- and autopkgtest-depend on crate rustls-pemfile
+  * provide virtual packages for features tls12 read_buf;
+    update versioned virtual packages
+
+ -- Jonas Smedegaard <dr@jones.dk>  Wed, 15 Jun 2022 09:40:07 +0200
+
+rust-rustls (0.19.1-3) unstable; urgency=medium
+
+  * simplify rules, using dh-cargo fork
+  * update copyright info:
+    + use License shortname Expat (not MIT)
+    + sort License sections by name
+    + use semantic newlines in License fields
+    + update coverage
+
+ -- Jonas Smedegaard <dr@jones.dk>  Wed, 18 May 2022 16:21:26 +0200
+
+rust-rustls (0.19.1-2) unstable; urgency=medium
+
+  * override lintian warning empty-rust-library-declares-provides
+  * stop superfluously mention package generator in long description
+  * fix update package relations
+  * stop provide superfluous virtual packages
+    librust-rustls-0+log-dev librust-rustls-0.19+log-dev
+    librust-rustls-0.19.1+log-dev;
+    update long description to not mention bogus feature "log"
+  * stop superfluously build-depend explicitly on debhelper
+  * relax to build-depend unversioned on dh-cargo
+  * relax to (build-)depend unversioned on librust-log-0.4+default-dev
+  * set Rules-Requires-Root: no
+  * declare compliance with Debian Policy 4.6.1
+  * extend autopkgtests to cover all features
+  * improve short and long descriptions
+  * update git-buildpackage config:
+    + enable automatic DEP-14 branch name handling
+
+ -- Jonas Smedegaard <dr@jones.dk>  Tue, 17 May 2022 18:15:36 +0200
+
+rust-rustls (0.19.1-1) unstable; urgency=medium
+
+  [ upstream ]
+  * new release(s)
+
+  [ Jonas Smedegaard ]
+  * update copyright info: update coverage
+  * simplify package dependencies by dropping unneeded trailing -~~
+  * update watch file: track v0.18.x (not v0.18.x)
+  * drop patch 1001 obsoleted by upstream changes
+  * update patch 1002
+  * add patch cherry-picked upstream to use newer crate env_logger;
+    update autopkgtest dependencies
+
+ -- Jonas Smedegaard <dr@jones.dk>  Tue, 17 May 2022 16:19:33 +0200
+
+rust-rustls (0.18.1-1) unstable; urgency=medium
+
+  [ upstream ]
+  * new release
+
+  [ Jonas Smedegaard]
+  * adopt package;
+    closes: bug#1009375,
+    thanks to Bastian Germann for past contributions
+  * update Vcs-* fields: packaging moved to standalone git repo
+  * update watch file:
+    + fix track actual upstream source (not crates.io distro)
+    + limit to track only same minor version
+    + set dversionmangle=auto; add usage comment
+  * add git-buildpackage config:
+    + use pristine-tar
+    + sign tags
+    + filter out any .git* files
+    + use DEP-14 branch names debian/latest upstream/latest
+    + add usage comment
+  * generate superficial cargo checksum during build
+    (not install pre-composed dummy)
+  * use debhelper compatibility level 13 (not 11);
+    build-depend on debhelper-compat
+  * rewrite patching as two separate patches
+    1001_base64.patch 1002_ring.patch;
+    add DEP-3 patch headers;
+    extend (not bump) needed base64 versions;
+    add debian/patches/README
+    documenting patch naming micro policy
+  * update Homepage and upstream source URI,
+    and list upstream issue tracker as preferred contact
+  * update copyright info:
+    + use field Reference,
+      and override related lintian warnings
+    + update coverage,
+      with my contributions licensed as GPL-3+
+  * add source helper script copyright-check
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sat, 16 Apr 2022 12:59:10 +0200
+
+rust-rustls (0.18.0-1.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * fix (build-)depend on librust-base64-0.13+default-dev
+    (not unavailable librust-base64-0.12+default-dev)
+
+ -- Jonas Smedegaard <dr@jones.dk>  Tue, 15 Mar 2022 21:57:08 +0100
+
+rust-rustls (0.18.0-1) unstable; urgency=medium
+
+  * Package rustls 0.18.0 from crates.io using debcargo 2.4.2
+
+ -- Bastian Germann <bastiangermann@fishpost.de>  Sun, 30 Aug 2020 17:11:19 +0200
