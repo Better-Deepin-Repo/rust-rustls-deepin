@@ -9,11 +9,7 @@ export RUSTFLAGS := -A unexpected-cfgs
 
 # ===================== 核心修复：删除损坏的 Cargo.lock + 纯 Stage-1 构建 =====================
 override_dh_auto_build:
-	# 1. 删除冲突的锁文件（彻底解决 zlib-rs 校验和错误）
-	rm -f Cargo.lock
-	rm -f rustls/Cargo.lock
-	
-	# 2. 强制离线构建 + 无锁文件校验（OBS/chroot 专用）
+	# 强制离线构建 + 无锁文件校验（OBS/chroot 专用）
 	cargo build --release \
 		--lib \
 		--offline \
