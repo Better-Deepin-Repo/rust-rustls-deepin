@@ -1,7 +1,5 @@
 [workspace]
 members = [
-  # Network-based tests
-  "connect-tests",
   # tests and example code
   "examples",
   # Tests that require OpenSSL
