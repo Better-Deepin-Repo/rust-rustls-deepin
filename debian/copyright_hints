@@ -58,19 +58,18 @@ Files: BENCHMARKING.md
  debian/copyright-check
  debian/gbp.conf
  debian/install
+ debian/patches/1001_asn1.patch
+ debian/patches/1001_hashbrown.patch
+ debian/patches/1001_x509-parser.patch
  debian/patches/1002_feature_fencing.patch
  debian/patches/2001_native_certs.patch
- debian/patches/2002_asn1.patch
- debian/patches/2002_aws_lc_rs.patch
- debian/patches/2002_brotli.patch
- debian/patches/2002_hashbrown.patch
+ debian/patches/2002_aws-lc-rs.patch
  debian/patches/2002_hickory-resolver.patch
  debian/patches/2002_hpke-rs.patch
- debian/patches/2002_macro_rules_attribute.patch
- debian/patches/2002_zlib-rs.patch
  debian/patches/2003_network_access.patch
  debian/patches/2004_no_feature_read_buf.patch
  debian/patches/2005_no_bench.patch
+ debian/patches/2005_no_bogo.patch
  debian/patches/README
  debian/patches/series
  debian/rules
@@ -79,6 +78,7 @@ Files: BENCHMARKING.md
  debian/tests/control
  debian/upstream/metadata
  debian/watch
+ deny.toml
  examples/Cargo.toml
  examples/README.md
  examples/src/bin/ech-client.rs
@@ -604,8 +604,10 @@ Files: BENCHMARKING.md
  fuzz/corpus/server/accepter-tls13-client.bin
  fuzz/corpus/server/buffered-tls12-client.bin
  fuzz/corpus/server/buffered-tls13-client.bin
- fuzz/corpus/unbuffered/server-tls12.bin
- fuzz/corpus/unbuffered/server-tls13.bin
+ fuzz/corpus/unbuffered/tls12-client.bin
+ fuzz/corpus/unbuffered/tls12-server.bin
+ fuzz/corpus/unbuffered/tls13-client.bin
+ fuzz/corpus/unbuffered/tls13-server.bin
  fuzz/fuzzers/client.rs
  fuzz/fuzzers/deframer.rs
  fuzz/fuzzers/fragment.rs
@@ -634,17 +636,22 @@ Files: BENCHMARKING.md
  provider-example/src/verify.rs
  rustls-bench/Cargo.toml
  rustls-bench/src/main.rs
- rustls-post-quantum/Cargo.lock
+ rustls-fuzzing-provider/Cargo.toml
+ rustls-fuzzing-provider/src/lib.rs
+ rustls-fuzzing-provider/tests/smoke.rs
  rustls-post-quantum/Cargo.toml
  rustls-post-quantum/README.md
+ rustls-post-quantum/README.tpl
+ rustls-post-quantum/benches/benchmarks.rs
  rustls-post-quantum/examples/client.rs
- rustls-post-quantum/src/hybrid.rs
  rustls-post-quantum/src/lib.rs
- rustls-post-quantum/src/mlkem.rs
  rustls-provider-test/Cargo.toml
  rustls-provider-test/README.md
  rustls-provider-test/tests/hpke.rs
  rustls-provider-test/tests/rfc-9180-test-vectors.json
+ rustls-test/Cargo.toml
+ rustls-test/src/lib.rs
+ rustls/.clippy.toml
  rustls/Cargo.toml
  rustls/benches/benchmarks.rs
  rustls/build.rs
@@ -657,14 +664,19 @@ Files: BENCHMARKING.md
  rustls/src/client/common.rs
  rustls/src/client/ech.rs
  rustls/src/client/handy.rs
+ rustls/src/client/test.rs
  rustls/src/client/tls12.rs
  rustls/src/client/tls13.rs
  rustls/src/common_state.rs
  rustls/src/compress.rs
  rustls/src/conn.rs
+ rustls/src/conn/kernel.rs
  rustls/src/conn/unbuffered.rs
  rustls/src/crypto/aws_lc_rs/hpke.rs
  rustls/src/crypto/aws_lc_rs/mod.rs
+ rustls/src/crypto/aws_lc_rs/pq/hybrid.rs
+ rustls/src/crypto/aws_lc_rs/pq/mlkem.rs
+ rustls/src/crypto/aws_lc_rs/pq/mod.rs
  rustls/src/crypto/aws_lc_rs/sign.rs
  rustls/src/crypto/aws_lc_rs/ticketer.rs
  rustls/src/crypto/aws_lc_rs/tls12.rs
@@ -729,6 +741,7 @@ Files: BENCHMARKING.md
  rustls/src/server/handy.rs
  rustls/src/server/hs.rs
  rustls/src/server/server_conn.rs
+ rustls/src/server/test.rs
  rustls/src/server/tls12.rs
  rustls/src/server/tls13.rs
  rustls/src/stream.rs
@@ -737,10 +750,11 @@ Files: BENCHMARKING.md
  rustls/src/testdata/cert-arstechnica.0.der
  rustls/src/testdata/cert-arstechnica.1.der
  rustls/src/testdata/cert-arstechnica.2.der
- rustls/src/testdata/cert-arstechnica.3.der
  rustls/src/testdata/cert-duckduckgo.0.der
  rustls/src/testdata/cert-duckduckgo.1.der
+ rustls/src/testdata/cert-duckduckgo.2.der
  rustls/src/testdata/cert-github.1.der
+ rustls/src/testdata/cert-github.2.der
  rustls/src/testdata/cert-google.0.der
  rustls/src/testdata/cert-google.1.der
  rustls/src/testdata/cert-google.2.der
@@ -750,13 +764,11 @@ Files: BENCHMARKING.md
  rustls/src/testdata/cert-reddit.1.der
  rustls/src/testdata/cert-rustlang.0.der
  rustls/src/testdata/cert-rustlang.1.der
- rustls/src/testdata/cert-rustlang.2.der
- rustls/src/testdata/cert-rustlang.3.der
  rustls/src/testdata/cert-servo.0.der
  rustls/src/testdata/cert-servo.1.der
+ rustls/src/testdata/cert-servo.2.der
  rustls/src/testdata/cert-stackoverflow.0.der
  rustls/src/testdata/cert-stackoverflow.1.der
- rustls/src/testdata/cert-stackoverflow.2.der
  rustls/src/testdata/cert-twitter.0.der
  rustls/src/testdata/cert-twitter.1.der
  rustls/src/testdata/cert-wapo.0.der

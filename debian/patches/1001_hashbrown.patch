@@ -1,0 +1,16 @@
+Description: accept newer minor version of crate hashbrown
+Author: Jonas Smedegaard <dr@jones.dk>
+Last-Update: 2025-10-19
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -56,7 +56,7 @@
+ der = "0.7"
+ ecdsa = "0.16.8"
+ env_logger = "0.11"
+-hashbrown = { version = "0.15", default-features = false, features = ["default-hasher", "inline-more"] }
++hashbrown = { version = ">= 0.15, <= 0.16", default-features = false, features = ["default-hasher", "inline-more"] }
+ hex = "0.4"
+ hickory-resolver = { version = "0.25", features = ["https-aws-lc-rs", "webpki-roots"] }
+ hmac = "0.12"

@@ -1,3 +1,244 @@
+rust-rustls (0.23.40+ds-1) unstable; urgency=medium
+
+  [ upstream ]
+  * new release(s)
+
+  [ Jonas Smedegaard ]
+  * bump project versions in virtual packages and autopkgtests
+  * unfuzz patches
+
+ -- Jonas Smedegaard <dr@jones.dk>  Tue, 28 Apr 2026 20:33:52 +0200
+
+rust-rustls (0.23.38+ds-1) unstable; urgency=medium
+
+  [ upstream ]
+  * new release
+
+  [ Jonas Smedegaard ]
+  * bump project versions in virtual packages and autopkgtests
+  * declare compliance with Debian Policy 4.7.4
+  * unfuzz patches
+  * stop autopktest-depend on package for crate bencher
+
+ -- Jonas Smedegaard <dr@jones.dk>  Mon, 13 Apr 2026 09:03:13 +0200
+
+rust-rustls (0.23.37+ds-3) unstable; urgency=medium
+
+  * tighten (build-)dependencies for crate zlib-rs:
+    closes:bug#1129664, thanks to Peter Michael Green
+
+ -- Jonas Smedegaard <dr@jones.dk>  Thu, 05 Mar 2026 09:43:58 +0100
+
+rust-rustls (0.23.37+ds-2) unstable; urgency=medium
+
+  * drop patch 2002_zlib-rs, obsoleted by upstream changes;
+    closes: bug#1129005,
+    thanks to Alexander Kjäll and Peter Michael Green
+
+ -- Jonas Smedegaard <dr@jones.dk>  Tue, 03 Mar 2026 22:54:01 +0100
+
+rust-rustls (0.23.37+ds-1) unstable; urgency=medium
+
+  [ upstream ]
+  * new release
+
+  [ Jonas Smedegaard ]
+  * update copyright info:
+    + avoid any .git* files when repackaging upstream source
+    + license patches same as main upstream license
+  * update git-buildpackage config:
+    + stop superfluously filter out .git* files
+  * bump project versions in virtual packages and autopkgtests
+  * relax (build-, autopkgtest-)dependencies for all crates,
+    except autopkgtest-dependencies for own feature-providing provisions
+  * stop set Multi-Arch: foreign,
+    incompatible with arch-any packaged crates
+  * update and unfuzz patches
+
+ -- Jonas Smedegaard <dr@jones.dk>  Tue, 24 Feb 2026 23:17:18 +0100
+
+rust-rustls (0.23.36+ds-1) unstable; urgency=medium
+
+  [ upstream ]
+  * new release
+
+  [ Jonas Smedegaard ]
+  * fix bump project versions in virtual packages
+  * update patches
+  * stop set superfluous fields Rules-Requires-Root Priority
+  * declare compliance with Debian Policy 4.7.3
+  * update watch file: use Uversion-Mangle: auto (not custom regex)
+  * update copyright info: update coverage
+
+ -- Jonas Smedegaard <dr@jones.dk>  Tue, 06 Jan 2026 09:01:46 +0100
+
+rust-rustls (0.23.35+ds-1) unstable; urgency=medium
+
+  [ upstream ]
+  * new release(s)
+
+  [ Jonas Smedegaard ]
+  * add patch 1001_asn1, superseding patch 2002_asn1;
+    tighten build- and autopkgtest-dependencies for crate asn1
+  * drop patches 2002_brotli 2002_brotli-decompressor,
+    obsoleted by Debian packaging changes;
+    tighten (build-)dependencies for crates brotli brotli-decompressor
+  * bump project versions in virtual packages and autopkgtests
+
+ -- Jonas Smedegaard <dr@jones.dk>  Wed, 05 Nov 2025 16:28:49 +0100
+
+rust-rustls (0.23.33+ds-4) unstable; urgency=medium
+
+  * extend patch 2002_asn1 to accept newer minor version
+    (in addition to older);
+    relax build- and autopkgtest-dependencies for crate asn1;
+    closes: bug#1119933, thanks to Peter Michael Green
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sun, 02 Nov 2025 17:05:25 +0100
+
+rust-rustls (0.23.33+ds-3) unstable; urgency=medium
+
+  * tighten (build-)dependencies for crate hashbrown
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sun, 19 Oct 2025 22:50:32 +0200
+
+rust-rustls (0.23.33+ds-2) unstable; urgency=medium
+
+  * add patch 1001_hashbrown
+    to accept newer minor version of crate hashbrown;
+    relax (build-)dependency for crate hashbrown
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sun, 19 Oct 2025 01:25:25 +0200
+
+rust-rustls (0.23.33+ds-1) unstable; urgency=medium
+
+  [ upstream ]
+  * new release
+
+  [ Jonas Smedegaard ]
+  * bump project versions in virtual packages and autopkgtests
+
+ -- Jonas Smedegaard <dr@jones.dk>  Fri, 17 Oct 2025 14:35:06 +0200
+
+rust-rustls (0.23.32+ds-2) unstable; urgency=medium
+
+  * update DEP-3 patch headers
+  * drop patch 2002_zlib-rs,
+    obsoleted by Debian packaging changes;
+    provide and autopkgtest feature zlib;
+    (build-)depend on package for crate zlib-rs
+
+ -- Jonas Smedegaard <dr@jones.dk>  Thu, 09 Oct 2025 22:46:03 +0200
+
+rust-rustls (0.23.32+ds-1) unstable; urgency=medium
+
+  [ upstream ]
+  * new release
+
+  [ Jonas Smedegaard ]
+  * unfuzz patches
+  * bump project versions in virtual packages and autopkgtests
+  * stop build- or autopkgtest-depend on packages for crate async-std
+  * bump build- and autopkgtest-dependencies for crate rcgen
+  * build-depend on packages for crate tokio
+
+ -- Jonas Smedegaard <dr@jones.dk>  Fri, 19 Sep 2025 14:03:32 +0200
+
+rust-rustls (0.23.31+ds-7) unstable; urgency=medium
+
+  * update patch 2001_native_certs;
+    bump build- and autopkgtest-dependencies
+    for crate rustls-native-certs;
+    closes: bug#1109149, thanks to Peter Michael Green
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sat, 30 Aug 2025 12:52:35 +0200
+
+rust-rustls (0.23.31+ds-6) unstable; urgency=medium
+
+  * no-changes upload to enable testing migration
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sat, 30 Aug 2025 09:59:56 +0200
+
+rust-rustls (0.23.31+ds-5) experimental; urgency=medium
+
+  * update and unfuzz patches
+  * build- and autopkgtest-depend on package
+    for crate macro-rules-attribute;
+    thighten (build-)dependencies for crate hashbrown;
+    relax (build-)dependencies
+    for crates brotli brotli-decompressor;
+    relax build- and autopkgtest-dependencies
+    for crates asn1 x509-parser
+  * update watch file:
+    + use file format 5
+    + improve mangling of upstream version
+
+ -- Jonas Smedegaard <dr@jones.dk>  Fri, 29 Aug 2025 21:17:55 +0200
+
+rust-rustls (0.23.31+ds-4) unstable; urgency=medium
+
+  * fix patch 1002;
+    revert to autopkgtest-check all-features
+
+ -- Jonas Smedegaard <dr@jones.dk>  Tue, 19 Aug 2025 17:28:19 +0200
+
+rust-rustls (0.23.31+ds-3) unstable; urgency=medium
+
+  * update mangling of system-shared code
+    to use system-shared test files;
+    closes: bug#1111502, thanks to Peter Green
+  * extend patch 1002 to fence more tests
+  * omit autopkgtest-checking all-features due to missing aws-lc-rs
+
+ -- Jonas Smedegaard <dr@jones.dk>  Tue, 19 Aug 2025 09:37:21 +0200
+
+rust-rustls (0.23.31+ds-2) unstable; urgency=medium
+
+  * no-changes source-only upload to enable testing migration
+
+ -- Jonas Smedegaard <dr@jones.dk>  Mon, 11 Aug 2025 14:24:12 +0200
+
+rust-rustls (0.23.31+ds-1) experimental; urgency=medium
+
+  [ upstream ]
+  * new release(s)
+
+  [ Jonas Smedegaard ]
+  * update and unfuzz patches
+  * bump project versions in virtual packages and autopkgtests
+  * stop tolerate test failures when targeted experimental
+  * tighten (build-)dependency for crate rustls-pki-types
+  * drop patch 2002_rustls-webpki;
+    bump (build-)dependencies for crate rustls-webpki
+
+ -- Jonas Smedegaard <dr@jones.dk>  Mon, 11 Aug 2025 08:19:59 +0200
+
+rust-rustls (0.23.26+ds-1) unstable; urgency=medium
+
+  [ upstream ]
+  * new release
+
+  [ Jonas Smedegaard ]
+  * bump project versions in virtual packages and autopkgtests
+  * unfuzz patches
+
+ -- Jonas Smedegaard <dr@jones.dk>  Thu, 10 Apr 2025 20:06:09 +0200
+
+rust-rustls (0.23.25+ds-1) unstable; urgency=medium
+
+  [ upstream ]
+  * new release(s)
+
+  [ Jonas Smedegaard ]
+  * bump project versions in virtual packages and autopkgtests
+  * update and unfuzz patches
+  * add patches 2002_itertools 2002_rustls-webpki
+    to use older branches of crates itertools rustls-webpki
+  * build- and autopkgtest-depend on package for crate x509-parser
+  * declare compliance with Debian Policy 4.7.2
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sun, 23 Mar 2025 17:44:41 +0100
+
 rust-rustls (0.23.20+ds-10) unstable; urgency=medium
 
   * really fix patch 1002

@@ -6,43 +6,43 @@ Last-Update: 2023-08-14
 This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 --- a/rustls/Cargo.toml
 +++ b/rustls/Cargo.toml
-@@ -12,10 +12,6 @@
+@@ -12,7 +12,6 @@
  autobenches = false
  autotests = false
  exclude = ["src/testdata", "tests/**"]
 -build = "build.rs"
--
+ 
+ [features]
+ default = ["ring", "logging", "std", "tls12"]
+@@ -20,15 +19,11 @@
+ brotli = ["dep:brotli", "dep:brotli-decompressor", "std"]
+ custom-provider = []
+ logging = ["log"]
+-read_buf = ["rustversion", "std"]
+ ring = ["dep:ring", "webpki/ring"]
+ std = ["webpki/std", "pki-types/std", "once_cell/std"]
+ tls12 = []
+ zlib = ["dep:zlib-rs"]
+ 
 -[build-dependencies]
 -rustversion = { version = "1.0.6", optional = true }
- 
+-
  [dependencies]
  brotli = { workspace = true, optional = true }
-@@ -38,7 +34,6 @@
- ring = ["dep:ring", "webpki/ring"]
- custom-provider = []
- tls12 = []
--read_buf = ["rustversion", "std"]
- 
- [dev-dependencies]
- base64 = { workspace = true }
+ brotli-decompressor = { workspace = true, optional = true }
 --- a/rustls/build.rs
 +++ /dev/null
-@@ -1,18 +0,0 @@
--/// This build script allows us to enable the `read_buf` language feature only
--/// for Rust Nightly.
--///
--/// See the comment in lib.rs to understand why we need this.
+@@ -1,13 +0,0 @@
+-//! This build script allows us to enable the `read_buf` language feature only
+-//! for Rust Nightly.
+-//!
+-//! See the comment in lib.rs to understand why we need this.
 -
 -#[cfg_attr(feature = "read_buf", rustversion::not(nightly))]
--fn main() {
--    println!("cargo:rustc-check-cfg=cfg(bench)");
--    println!("cargo:rustc-check-cfg=cfg(read_buf)");
--}
+-fn main() {}
 -
 -#[cfg(feature = "read_buf")]
 -#[rustversion::nightly]
 -fn main() {
--    println!("cargo:rustc-check-cfg=cfg(bench)");
--    println!("cargo:rustc-check-cfg=cfg(read_buf)");
 -    println!("cargo:rustc-cfg=read_buf");
 -}

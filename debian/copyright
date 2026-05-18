@@ -3,8 +3,10 @@ Upstream-Name: rustls
 Upstream-Contact: https://github.com/rustls/rustls/issues
 Source: https://github.com/rustls/rustls
  .
- Repackaged to exclude website.
+ Repackaged, excluding any .git* files
+ and website.
 Files-Excluded:
+ */.git*
  website/*
 
 Files: *
@@ -18,7 +20,7 @@ Copyright:
   2020       Bastian Germann <bastiangermann@fishpost.de>
   2020       Debian Rust Maintainers
  <pkg-rust-maintainers@alioth-lists.debian.net>
-  2022-2025  Jonas Smedegaard <dr@jones.dk>
+  2022-2026  Jonas Smedegaard <dr@jones.dk>
   2022       Purism, SPC
 License-Grant:
  This packaging is free software:
@@ -29,6 +31,17 @@ License-Grant:
  or (at your option) any later version.
 License: GPL-3+
 Reference: debian/copyright
+
+Files:
+ debian/patches/*
+Copyright:
+  Jonas Smedegaard <dr@jones.dk>
+License: Apache-2.0 or Expat or ISC
+Comment:
+ Patches commonly lack explicit copyright and license.
+ For the cases where patches are copyrightable at all,
+ copyright is assumed to be held by the author,
+ and license is assumed to be the same as main upstream license.
 
 License: Apache-2.0
 Reference: /usr/share/common-licenses/Apache-2.0

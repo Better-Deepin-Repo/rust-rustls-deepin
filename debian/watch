@@ -1,13 +1,11 @@
-version=4
+version: 5
 # check: uscan --report
 # update: gbp import-orig --upstream-vcs-tag=vX.Y.Z --uscan
 
-opts=\
-repacksuffix=+ds,\
-uversionmangle=s/\d\K-([a-z]+)\.?(\d)?/~$1$2/,\
-filenamemangle=s/.*?@ANY_VERSION@(@ARCHIVE_EXT@)/@PACKAGE@_$1.orig$2/,\
-downloadurlmangle=s!api.github.com/repos/[^/]+/[^/]+/\Kgit/!tarball/!g,\
-searchmode=plain,\
-dversionmangle=auto \
-https://api.github.com/repos/rustls/rustls/git/matching-refs/tags/v/ \
-https://api.github.com/repos/[^/]+/[^/]+/git/refs/tags/v/@ANY_VERSION@
+Template: Github
+Owner: rustls
+Project: rustls
+Matching-Pattern: https://api.github.com/repos/[^/]+/[^/]+/git/refs/tags/v/@ANY_VERSION@
+Uversion-Mangle: auto
+Dversion-Mangle: auto
+Repacksuffix: +ds

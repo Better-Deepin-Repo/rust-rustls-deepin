@@ -2,18 +2,17 @@
 //! so that unused cryptography in rustls can be discarded by the linker.  You can
 //! observe using `nm` that the binary of this program does not contain any AES code.
 
-use std::io::{stdout, Read, Write};
+use std::io::{Read, Write, stdout};
 use std::net::TcpStream;
 use std::sync::Arc;
 
-use rustls::crypto::{ring as provider, CryptoProvider};
-use rustls::pki_types::CertificateDer;
+use rustls::crypto::{CryptoProvider, ring as provider};
 use rustls_native_certs::load_native_certs;
 
 fn main() {
     let mut root_store = rustls::RootCertStore::empty();
     for cert in load_native_certs().expect("could not load platform certs") {
-        root_store.add(CertificateDer::from_slice(&cert.0))
+        root_store.add(cert)
             .expect("could not add certificate");
     };
 

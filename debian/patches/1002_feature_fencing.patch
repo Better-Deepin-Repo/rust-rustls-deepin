@@ -9,8 +9,8 @@ Last-Update: 2025-02-14
 This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 --- a/rustls/src/client/handy.rs
 +++ b/rustls/src/client/handy.rs
-@@ -296,6 +296,7 @@
-     use crate::suites::SupportedCipherSuite;
+@@ -267,6 +267,7 @@
+     use crate::{DigitallySignedStruct, Error, SignatureScheme, sign};
  
      #[test]
 +    #[cfg(feature = "std")]
@@ -26,8 +26,8 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 -#[cfg(any(feature = "std", feature = "hashbrown"))]
 +#[cfg(any(feature = "std", all(feature = "default", feature = "hashbrown")))]
  mod cache {
-     use alloc::sync::Arc;
      use alloc::vec::Vec;
+     use core::fmt::{Debug, Formatter};
 @@ -144,7 +144,7 @@
      }
  }
@@ -39,7 +39,7 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
  /// Something which never produces tickets.
 --- a/rustls/src/lib.rs
 +++ b/rustls/src/lib.rs
-@@ -611,7 +611,7 @@
+@@ -638,7 +638,7 @@
      pub use builder::WantsServerCert;
      #[cfg(any(feature = "std", feature = "hashbrown"))]
      pub use handy::ResolvesServerCertUsingSni;
@@ -48,3 +48,205 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
      pub use handy::ServerSessionMemoryCache;
      pub use handy::{AlwaysResolvesServerRawPublicKeys, NoServerSessionStorage};
      pub use server_conn::{
+--- a/rustls/src/client/test.rs
++++ b/rustls/src/client/test.rs
+@@ -6,7 +6,7 @@
+ 
+ use pki_types::{CertificateDer, ServerName};
+ 
+-use crate::client::{ClientConfig, ClientConnection, Resumption, Tls12Resumption};
++use crate::client::{ClientConfig, Resumption, Tls12Resumption};
+ use crate::crypto::CryptoProvider;
+ use crate::enums::{CipherSuite, ProtocolVersion, SignatureScheme};
+ use crate::msgs::base::PayloadU16;
+@@ -20,6 +20,9 @@
+ use crate::sync::Arc;
+ use crate::{Error, PeerIncompatible, PeerMisbehaved, RootCertStore};
+ 
++#[cfg(feature = "std")]
++use crate::client::ClientConnection;
++
+ #[macro_rules_attribute::apply(test_for_each_provider)]
+ mod tests {
+     use std::sync::OnceLock;
+@@ -46,6 +49,7 @@
+ 
+     /// Tests that session_ticket(35) extension
+     /// is not sent if the client does not support TLS 1.2.
++    #[cfg(feature = "std")]
+     #[test]
+     fn test_no_session_ticket_request_on_tls_1_3() {
+         let mut config =
+@@ -60,6 +64,7 @@
+         assert!(ch.extensions.session_ticket.is_none());
+     }
+ 
++    #[cfg(feature = "std")]
+     #[test]
+     fn test_no_renegotiation_scsv_on_tls_1_3() {
+         let ch = client_hello_sent_for_config(
+@@ -76,6 +81,7 @@
+         );
+     }
+ 
++    #[cfg(feature = "std")]
+     #[test]
+     fn test_client_does_not_offer_sha1() {
+         for version in crate::ALL_VERSIONS {
+@@ -97,6 +103,7 @@
+         }
+     }
+ 
++    #[cfg(feature = "std")]
+     #[test]
+     fn test_client_rejects_hrr_with_varied_session_id() {
+         let config =
+@@ -135,7 +142,7 @@
+         );
+     }
+ 
+-    #[cfg(feature = "tls12")]
++    #[cfg(all(feature = "std", feature = "tls12"))]
+     #[test]
+     fn test_client_rejects_no_extended_master_secret_extension_when_require_ems_or_fips() {
+         let mut config =
+@@ -179,6 +186,7 @@
+         );
+     }
+ 
++    #[cfg(all(feature = "std", feature = "tls12"))]
+     #[test]
+     fn cas_extension_in_client_hello_if_server_verifier_requests_it() {
+         let cas_sending_server_verifier =
+@@ -207,7 +215,7 @@
+     }
+ 
+     /// Regression test for <https://github.com/seanmonstar/reqwest/issues/2191>
+-    #[cfg(feature = "tls12")]
++    #[cfg(all(feature = "std", feature = "tls12"))]
+     #[test]
+     fn test_client_with_custom_verifier_can_accept_ecdsa_sha1_signatures() {
+         let verifier = Arc::new(ExpectSha1EcdsaVerifier::default());
+@@ -341,6 +349,7 @@
+         }
+     }
+ 
++    #[cfg(feature = "std")]
+     #[test]
+     fn test_client_requiring_rpk_rejects_server_that_only_offers_x509_id_by_omission() {
+         assert_eq!(
+@@ -349,6 +358,7 @@
+         );
+     }
+ 
++    #[cfg(feature = "std")]
+     #[test]
+     fn test_client_requiring_rpk_rejects_server_that_only_offers_x509_id() {
+         assert_eq!(
+@@ -360,6 +370,7 @@
+         );
+     }
+ 
++    #[cfg(feature = "std")]
+     #[test]
+     fn test_client_requiring_rpk_rejects_server_that_only_demands_x509_by_omission() {
+         assert_eq!(
+@@ -371,6 +382,7 @@
+         );
+     }
+ 
++    #[cfg(feature = "std")]
+     #[test]
+     fn test_client_requiring_rpk_rejects_server_that_only_demands_x509() {
+         assert_eq!(
+@@ -383,6 +395,7 @@
+         );
+     }
+ 
++    #[cfg(feature = "std")]
+     #[test]
+     fn test_client_requiring_rpk_accepts_rpk_server() {
+         assert_eq!(
+@@ -395,6 +408,7 @@
+         );
+     }
+ 
++    #[cfg(feature = "std")]
+     fn client_requiring_rpk_receives_server_ee(
+         encrypted_extensions: ServerExtensions<'_>,
+     ) -> Result<(), Error> {
+@@ -446,6 +460,7 @@
+         conn.process_new_packets().map(|_| ())
+     }
+ 
++    #[cfg(feature = "std")]
+     fn client_config_for_rpk(key_log: Arc<dyn KeyLog>) -> ClientConfig {
+         let mut config = ClientConfig::builder_with_provider(x25519_provider().into())
+             .with_protocol_versions(&[&version::TLS13])
+@@ -631,6 +646,7 @@
+ #[cfg(all(
+     feature = "aws-lc-rs",
+     feature = "prefer-post-quantum",
++    feature = "std",
+     not(feature = "fips")
+ ))]
+ #[test]
+@@ -654,7 +670,7 @@
+     assert_eq!(key_shares[1].group, NamedGroup::X25519);
+ }
+ 
+-#[cfg(feature = "aws-lc-rs")]
++#[cfg(all(feature = "aws-lc-rs", feature = "std"))]
+ #[test]
+ fn hybrid_kx_component_share_not_offered_unless_supported_separately() {
+     use crate::crypto::aws_lc_rs;
+@@ -680,6 +696,7 @@
+     assert_eq!(key_shares[0].group, NamedGroup::X25519MLKEM768);
+ }
+ 
++#[cfg(feature = "std")]
+ fn client_hello_sent_for_config(config: ClientConfig) -> Result<ClientHelloPayload, Error> {
+     let mut conn =
+         ClientConnection::new(config.into(), ServerName::try_from("localhost").unwrap())?;
+--- a/rustls/src/server/test.rs
++++ b/rustls/src/server/test.rs
+@@ -63,6 +63,7 @@
+ }
+ 
+ #[macro_rules_attribute::apply(test_for_each_provider)]
++#[cfg(feature = "std")]
+ mod tests {
+     use alloc::vec::Vec;
+ 
+@@ -77,7 +78,10 @@
+     use crate::server::{AlwaysResolvesServerRawPublicKeys, ServerConfig, ServerConnection};
+     use crate::sign::CertifiedKey;
+     use crate::sync::Arc;
+-    use crate::{CipherSuiteCommon, SupportedCipherSuite, Tls12CipherSuite, version};
++    use crate::{CipherSuiteCommon, SupportedCipherSuite, version};
++
++    #[cfg(feature = "tls12")]
++    use crate::Tls12CipherSuite;
+ 
+     #[cfg(feature = "tls12")]
+     #[test]
+@@ -282,6 +286,7 @@
+         ]
+     }
+ 
++    #[cfg(feature = "tls12")]
+     fn ffdhe_provider() -> CryptoProvider {
+         CryptoProvider {
+             kx_groups: vec![FAKE_FFDHE_GROUP],
+@@ -326,9 +331,11 @@
+         }
+     }
+ 
++    #[cfg(feature = "tls12")]
+     static TLS_DHE_RSA_WITH_AES_128_GCM_SHA256: SupportedCipherSuite =
+         SupportedCipherSuite::Tls12(&TLS12_DHE_RSA_WITH_AES_128_GCM_SHA256);
+ 
++    #[cfg(feature = "tls12")]
+     static TLS12_DHE_RSA_WITH_AES_128_GCM_SHA256: Tls12CipherSuite =
+         match &super::provider::cipher_suite::TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 {
+             SupportedCipherSuite::Tls12(provider) => Tls12CipherSuite {

@@ -15,26 +15,37 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
    # Network-based tests
    "connect-tests",
    # tests and example code
-@@ -12,8 +10,6 @@
-   "openssl-tests",
-   # the main library and tests
+@@ -14,8 +12,6 @@
    "rustls",
+   # common code for testing the core crate
+   "rustls-test",
 -  # benchmarking tool
 -  "rustls-bench",
+   # rustls cryptography provider for fuzzing
+   "rustls-fuzzing-provider",
  ]
- 
- ## Deliberately not included in `members`:
-@@ -37,7 +33,6 @@
- async-std = { version = "1.12.0", features = ["attributes"] }
+@@ -38,7 +34,6 @@
+ asn1 = ">= 0.22, <= 0.23"
  async-trait = "0.1.74"
  base64 = "0.22"
 -bencher = "0.1.5"
- brotli = { version = ">= 6.0.0, <= 7", default-features = false, features = ["std"] }
- brotli-decompressor = "4.0.1" # 4.0.1 required for panic fix
+ brotli = { version = "8", default-features = false, features = ["std"] }
+ brotli-decompressor = "5.0.0"
  byteorder = "1.4.3"
+@@ -90,10 +85,6 @@
+ zeroize = "1.8"
+ zlib-rs = "0.6"
+ 
+-[profile.bench]
+-codegen-units = 1
+-lto = true
+-
+ # ensure all our tests are against the local copy, never
+ # against the latest _published_ copy.
+ [patch.crates-io]
 --- a/rustls/Cargo.toml
 +++ b/rustls/Cargo.toml
-@@ -37,7 +37,6 @@
+@@ -40,7 +40,6 @@
  
  [dev-dependencies]
  base64 = { workspace = true }
@@ -42,9 +53,9 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
  env_logger = { workspace = true }
  hex = { workspace = true }
  log = { workspace = true }
-@@ -48,12 +47,6 @@
+@@ -54,12 +53,6 @@
  time = { workspace = true }
- rustls-native-certs = { workspace = true }
+ x509-parser = { workspace = true }
  
 -[[bench]]
 -name = "benchmarks"

@@ -8,18 +8,17 @@
 //! Note that `unwrap()` is used to deal with networking errors; this is not something
 //! that is sensible outside of example code.
 
-use std::io::{stdout, Read, Write};
+use std::io::{Read, Write, stdout};
 use std::net::TcpStream;
 use std::sync::Arc;
 
-use rustls::pki_types::CertificateDer;
 use rustls::RootCertStore;
 use rustls_native_certs::load_native_certs;
 
 fn main() {
     let mut root_store = RootCertStore::empty();
     for cert in load_native_certs().expect("could not load platform certs") {
-        root_store.add(CertificateDer::from_slice(&cert.0))
+        root_store.add(cert)
             .expect("could not add certificate");
     };
     let mut config = rustls::ClientConfig::builder()

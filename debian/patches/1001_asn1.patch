@@ -1,0 +1,17 @@
+Description: accept newer minor version of crate asn1
+Author: Jonas Smedegaard <dr@jones.dk>
+Bug-Debian: https://bugs.debian.org/1119933
+Last-Update: 2025-11-05
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -41,7 +41,7 @@
+ 
+ [workspace.dependencies]
+ anyhow = "1.0.73"
+-asn1 = "0.22"
++asn1 = ">= 0.22, <= 0.23"
+ async-trait = "0.1.74"
+ aws-lc-rs = { version = "1.14", default-features = false }
+ base64 = "0.22"

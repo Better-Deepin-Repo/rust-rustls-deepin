@@ -1,6 +1,6 @@
 [package]
 name = "rustls-post-quantum"
-version = "0.2.0"
+version = "0.2.2"
 edition = "2021"
 rust-version = "1.71"
 license = "Apache-2.0 OR ISC OR MIT"
@@ -9,10 +9,17 @@ description = "Experimental support for post-quantum key exchange in rustls"
 homepage = "https://github.com/rustls/rustls"
 repository = "https://github.com/rustls/rustls"
 categories = ["network-programming", "cryptography"]
+autobenches = false
 
 [dependencies]
-rustls = { version = "0.23.20", path = "../rustls" }
+rustls = { version = "0.23.22", path = "../rustls" }
 
 [dev-dependencies]
-env_logger = "0.11"
-webpki-roots = "0.26"
+criterion = { workspace = true }
+env_logger = { workspace = true }
+webpki-roots = { workspace = true }
+
+[[bench]]
+name = "benchmarks"
+path = "benches/benchmarks.rs"
+harness = false

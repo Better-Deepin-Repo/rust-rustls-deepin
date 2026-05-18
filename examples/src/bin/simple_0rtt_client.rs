@@ -19,25 +19,24 @@ use std::net::TcpStream;
 use std::str::FromStr;
 use std::sync::Arc;
 
+use rustls::RootCertStore;
 use rustls::pki_types::pem::PemObject;
 use rustls::pki_types::{CertificateDer, ServerName};
-use rustls::RootCertStore;
 use rustls_native_certs::load_native_certs;
 
 fn start_connection(config: &Arc<rustls::ClientConfig>, domain_name: &str, port: u16) {
     let server_name = ServerName::try_from(domain_name)
         .expect("invalid DNS name")
         .to_owned();
-    let mut conn = rustls::ClientConnection::new(Arc::clone(config), server_name).unwrap();
-    let mut sock = TcpStream::connect(format!("{}:{}", domain_name, port)).unwrap();
+    let mut conn = rustls::ClientConnection::new(config.clone(), server_name).unwrap();
+    let mut sock = TcpStream::connect(format!("{domain_name}:{port}")).unwrap();
     sock.set_nodelay(true).unwrap();
     let request = format!(
         "GET / HTTP/1.1\r\n\
-         Host: {}\r\n\
+         Host: {domain_name}\r\n\
          Connection: close\r\n\
          Accept-Encoding: identity\r\n\
-         \r\n",
-        domain_name
+         \r\n"
     );
 
     // If early data is available with this server, then early_data()
@@ -70,7 +69,7 @@ fn start_connection(config: &Arc<rustls::ClientConfig>, domain_name: &str, port:
     BufReader::new(stream)
         .read_line(&mut first_response_line)
         .unwrap();
-    println!("  * Server response: {:?}", first_response_line);
+    println!("  * Server response: {first_response_line:?}");
 }
 
 fn main() {
@@ -95,7 +94,7 @@ fn main() {
         );
     } else {
         for cert in load_native_certs().expect("could not load platform certs") {
-            root_store.add(CertificateDer::from_slice(&cert.0))
+            root_store.add(cert)
                 .expect("could not add certificate");
         };
     }

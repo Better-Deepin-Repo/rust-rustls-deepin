@@ -6,7 +6,7 @@ Last-Update: 2024-12-17
 This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 --- a/Cargo.toml
 +++ b/Cargo.toml
-@@ -10,14 +10,10 @@
+@@ -10,16 +10,12 @@
    "examples",
    # Tests that require OpenSSL
    "openssl-tests",
@@ -14,10 +14,12 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 -  "provider-example",
    # the main library and tests
    "rustls",
+   # common code for testing the core crate
+   "rustls-test",
    # benchmarking tool
    "rustls-bench",
 -  # rustls cryptography provider integration tests
 -  "rustls-provider-test",
+   # rustls cryptography provider for fuzzing
+   "rustls-fuzzing-provider",
  ]
- 
- ## Deliberately not included in `members`:

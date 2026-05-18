@@ -1,0 +1,176 @@
+Description: avoid not-in-Debian crate aws-lc-rs
+Author: Jonas Smedegaard <dr@jones.dk>
+Forwarded: not-needed
+Last-Update: 2025-08-29
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/rustls/Cargo.toml
++++ b/rustls/Cargo.toml
+@@ -15,15 +15,11 @@
+ build = "build.rs"
+ 
+ [features]
+-default = ["aws_lc_rs", "logging", "prefer-post-quantum", "std", "tls12"]
++default = ["ring", "logging", "std", "tls12"]
+ 
+-aws-lc-rs = ["aws_lc_rs"] # Alias because Cargo features commonly use `-`
+-aws_lc_rs = ["dep:aws-lc-rs", "webpki/aws-lc-rs", "aws-lc-rs/aws-lc-sys", "aws-lc-rs/prebuilt-nasm"]
+ brotli = ["dep:brotli", "dep:brotli-decompressor", "std"]
+ custom-provider = []
+-fips = ["aws_lc_rs", "aws-lc-rs?/fips", "webpki/aws-lc-rs-fips"]
+ logging = ["log"]
+-prefer-post-quantum = ["aws_lc_rs"]
+ read_buf = ["rustversion", "std"]
+ ring = ["dep:ring", "webpki/ring"]
+ std = ["webpki/std", "pki-types/std", "once_cell/std"]
+@@ -34,7 +30,6 @@
+ rustversion = { version = "1.0.6", optional = true }
+ 
+ [dependencies]
+-aws-lc-rs = { workspace = true, optional = true }
+ brotli = { workspace = true, optional = true }
+ brotli-decompressor = { workspace = true, optional = true }
+ hashbrown = { workspace = true, optional = true }
+@@ -73,6 +68,7 @@
+ [[example]]
+ name = "test_ca"
+ path = "examples/internal/test_ca.rs"
++required-features = ["aws_lc_rs"]
+ 
+ [[test]]
+ name = "api"
+--- a/bogo/Cargo.toml
++++ b/bogo/Cargo.toml
+@@ -8,11 +8,8 @@
+ base64 = { workspace = true }
+ env_logger = { workspace = true }
+ nix = { version = "0.30", default-features = false, features = ["signal"] }
+-rustls = { path = "../rustls", features = ["aws_lc_rs", "ring", "tls12"] }
+-rustls-post-quantum = { path = "../rustls-post-quantum", optional = true }
++rustls = { path = "../rustls", features = ["ring", "tls12"] }
+ webpki = { workspace = true }
+ 
+ [features]
+ default = []
+-post-quantum = ["dep:rustls-post-quantum"]
+-fips = ["rustls/fips"]
+--- a/ci-bench/Cargo.toml
++++ b/ci-bench/Cargo.toml
+@@ -14,7 +14,7 @@
+ itertools = { workspace = true }
+ rayon = { workspace = true }
+ rustc-hash = { workspace = true }
+-rustls = { path = "../rustls", features = ["ring", "aws_lc_rs"] }
++rustls = { path = "../rustls", features = ["ring"] }
+ rustls-test = { workspace = true }
+ rustls-fuzzing-provider = { workspace = true }
+ 
+--- a/rustls-provider-test/Cargo.toml
++++ b/rustls-provider-test/Cargo.toml
+@@ -9,6 +9,6 @@
+ [dependencies]
+ hex = "0.4"
+ provider-example = { package = "rustls-provider-example", version = "0.0.1", path = "../provider-example" }
+-rustls = { version = "0.23.8", features = ["aws_lc_rs", "logging"], path = "../rustls" }
++rustls = { version = "0.23.8", features = ["logging"], path = "../rustls" }
+ serde = { version = "1", features = ["derive"] }
+ serde_json = "1"
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -18,8 +18,6 @@
+   "rustls-test",
+   # benchmarking tool
+   "rustls-bench",
+-  # experimental post-quantum algorithm support
+-  "rustls-post-quantum",
+   # rustls cryptography provider integration tests
+   "rustls-provider-test",
+   # rustls cryptography provider for fuzzing
+@@ -43,7 +41,6 @@
+ anyhow = "1.0.73"
+ asn1 = ">= 0.22, <= 0.23"
+ async-trait = "0.1.74"
+-aws-lc-rs = { version = "1.14", default-features = false }
+ base64 = "0.22"
+ bencher = "0.1.5"
+ brotli = { version = "8", default-features = false, features = ["std"] }
+@@ -58,7 +55,7 @@
+ env_logger = "0.11"
+ hashbrown = { version = ">= 0.15, <= 0.16", default-features = false, features = ["default-hasher", "inline-more"] }
+ hex = "0.4"
+-hickory-resolver = { version = "0.25", features = ["https-aws-lc-rs", "rustls-platform-verifier"] }
++hickory-resolver = { version = "0.25", features = ["https-ring", "rustls-platform-verifier"] }
+ hmac = "0.12"
+ hpke-rs = "0.6"
+ hpke-rs-crypto = "0.6"
+@@ -75,7 +72,7 @@
+ pki-types = { package = "rustls-pki-types", version = "1.12", features = ["alloc"] }
+ rand_core = { version = "0.6", features = ["getrandom"] }
+ rayon = "1.7"
+-rcgen = { version = "0.14", features = ["pem", "aws_lc_rs"], default-features = false }
++rcgen = { version = "0.14", features = ["pem"] }
+ regex = "1"
+ ring = "0.17"
+ rsa = { version = "0.9", features = ["sha2"], default-features = false }
+--- a/examples/src/bin/limitedclient.rs
++++ b/examples/src/bin/limitedclient.rs
+@@ -6,7 +6,7 @@
+ use std::net::TcpStream;
+ use std::sync::Arc;
+ 
+-use rustls::crypto::{CryptoProvider, aws_lc_rs as provider};
++use rustls::crypto::{CryptoProvider, ring as provider};
+ use rustls_native_certs::load_native_certs;
+ 
+ fn main() {
+--- a/examples/src/bin/tlsclient-mio.rs
++++ b/examples/src/bin/tlsclient-mio.rs
+@@ -27,7 +27,7 @@
+ use clap::Parser;
+ use mio::net::TcpStream;
+ use rustls::RootCertStore;
+-use rustls::crypto::{CryptoProvider, SupportedKxGroup, aws_lc_rs as provider};
++use rustls::crypto::{CryptoProvider, SupportedKxGroup, ring as provider};
+ use rustls::pki_types::pem::PemObject;
+ use rustls::pki_types::{CertificateDer, PrivateKeyDer, ServerName};
+ use rustls_native_certs::load_native_certs;
+--- a/examples/src/bin/tlsserver-mio.rs
++++ b/examples/src/bin/tlsserver-mio.rs
+@@ -29,7 +29,7 @@
+ use log::{debug, error};
+ use mio::net::{TcpListener, TcpStream};
+ use rustls::RootCertStore;
+-use rustls::crypto::{CryptoProvider, aws_lc_rs as provider};
++use rustls::crypto::{CryptoProvider, ring as provider};
+ use rustls::pki_types::pem::PemObject;
+ use rustls::pki_types::{CertificateDer, CertificateRevocationListDer, PrivateKeyDer};
+ use rustls::server::WebPkiClientVerifier;
+--- a/rustls-post-quantum/Cargo.toml
++++ b/rustls-post-quantum/Cargo.toml
+@@ -12,7 +12,7 @@
+ autobenches = false
+ 
+ [dependencies]
+-rustls = { version = "0.23.22", features = ["aws_lc_rs", "prefer-post-quantum"], path = "../rustls" }
++rustls = { version = "0.23.22", path = "../rustls" }
+ 
+ [dev-dependencies]
+ criterion = { workspace = true }
+--- a/rustls-bench/Cargo.toml
++++ b/rustls-bench/Cargo.toml
+@@ -8,15 +8,11 @@
+ clap = { workspace = true }
+ rustls = { path = "../rustls" }
+ rustls-graviola = { workspace = true, optional = true }
+-rustls-post-quantum = { path = "../rustls-post-quantum", optional = true }
+ rustls-test = { workspace = true }
+ 
+ [features]
+ default = []
+-aws-lc-rs = ["rustls/aws-lc-rs"]
+-fips = ["rustls/fips", "aws-lc-rs"]
+ graviola = ["dep:rustls-graviola"]
+-post-quantum = ["dep:rustls-post-quantum"]
+ ring = ["rustls/ring"]
+ 
+ [target.'cfg(not(target_env = "msvc"))'.dependencies]
