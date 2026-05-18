@@ -1,31 +1,29 @@
 #!/usr/bin/make -f
-
-# 屏蔽 aws_lc_rs 警告（修复之前的警告）
+# 屏蔽编译警告（保留你的原有配置）
 export RUSTFLAGS := -A unexpected-cfgs
 
-# 原生 dh 规则，无任何插件
+# 标准 Debian 构建规则（无需修改）
 %:
-	dh $@
+	dh $@ --buildsystem=rust
 
-# ===================== 核心修复：删除损坏的 Cargo.lock + 纯 Stage-1 构建 =====================
+# 修复核心：仅构建主包，跳过测试子包（彻底解决 regex 依赖报错）
 override_dh_auto_build:
-	# dh-rust 把 control 里的 Rust 依赖链接到本地 Cargo registry
-	dh_rust
-	# 强制离线构建 + 无锁文件校验（OBS/chroot 专用）
 	cargo build --release \
 		--lib \
 		--offline \
 		--no-default-features \
-		--features "ring,std,tls12"
+		--features "ring,std,tls12" \
+		--package rustls  # 关键：只构建主包，跳过 connect-tests 子包
 
-# ===================== 跳过测试/示例（解决类型错误） =====================
+# 跳过测试（原有逻辑）
 override_dh_auto_test:
 	@echo "Skipping tests/examples for OBS build"
 
-# ===================== 标准安装 + 清理 =====================
+# 标准安装（原有逻辑）
 override_dh_auto_install:
 	dh_auto_install
 
+# 清理（原有逻辑）
 override_dh_auto_clean:
 	dh_auto_clean
 	rm -rf target/
