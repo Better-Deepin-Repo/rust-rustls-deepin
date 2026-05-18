@@ -5,7 +5,7 @@ export RUSTFLAGS := -A unexpected-cfgs
 %:
 	dh $@ --buildsystem=rust
 
-# 关键：只传递构建参数，不手动执行 cargo！让 dh-rust 自动构建
+# 关键：只传递构建参数，不手动执行 cargo！让 dh-rust 自动构建并仅构建核心功能
 override_dh_auto_build:
 	dh_auto_build -- \
 		--release \
