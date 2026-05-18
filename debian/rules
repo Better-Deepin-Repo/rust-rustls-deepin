@@ -16,6 +16,7 @@ override_dh_auto_build:
 	# 2. 强制离线构建 + 无锁文件校验（OBS/chroot 专用）
 	cargo build --release \
 		--lib \
+		--offline \
 		--no-default-features \
 		--features "ring,std,tls12"
 
