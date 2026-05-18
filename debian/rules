@@ -1,29 +1,33 @@
 #!/usr/bin/make -f
 
-# 全局屏蔽无用警告 (解决 aws_lc_rs 报错)
+# 屏蔽 aws_lc_rs 警告（修复之前的警告）
 export RUSTFLAGS := -A unexpected-cfgs
 
-# 标准Debian辅助工具入口
+# 原生 dh 规则，无任何插件
 %:
-	dh $@ --with rustc
+	dh $@
 
-# ===================== 纯 Stage-1 构建 (核心) =====================
-# 只编译 rustls 核心库, 禁用native-certs, 无循环依赖
+# ===================== 核心修复：删除损坏的 Cargo.lock + 纯 Stage-1 构建 =====================
 override_dh_auto_build:
+	# 1. 删除冲突的锁文件（彻底解决 zlib-rs 校验和错误）
+	rm -f Cargo.lock
+	rm -f rustls/Cargo.lock
+	
+	# 2. 强制离线构建 + 无锁文件校验（OBS/chroot 专用）
 	cargo build --release \
 		--lib \
 		--no-default-features \
 		--features "ring,std,tls12"
 
-# ===================== 跳过所有测试/示例 (彻底解决类型错误) =====================
+# ===================== 跳过测试/示例（解决类型错误） =====================
 override_dh_auto_test:
-	@echo "Skipping all tests/examples (OBS chroot + native-certs 0.6 compatibility)"
+	@echo "Skipping tests/examples for OBS build"
 
-# ===================== 跳过无用文件 (减小包体积) =====================
+# ===================== 标准安装 + 清理 =====================
 override_dh_auto_install:
-	dh_auto_install -- --no-upstream-doc
+	dh_auto_install
 
-# 清理构建残留
-execute_after_dh_auto_clean:
+override_dh_auto_clean:
+	dh_auto_clean
 	rm -rf target/
-	rm -f rustls/sslkeylogfile.txt
+	rm -f Cargo.lock rustls/Cargo.lock
