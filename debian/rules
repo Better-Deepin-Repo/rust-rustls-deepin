@@ -1,24 +1,17 @@
 #!/usr/bin/make -f
-export RUSTFLAGS := -A unexpected-cfgs
 
-# 核心：标准 dh-rust 构建，自动使用系统离线依赖
 %:
-	dh $@ --buildsystem=rust
+	dh $@
 
-# 关键：只传递构建参数，不手动执行 cargo！让 dh-rust 自动构建并仅构建核心功能
-override_dh_auto_build:
-	dh_auto_build -- \
-		--release \
-		--lib \
-		--no-default-features \
-		--features="ring,std,tls12"
+# cleanup after test
+execute_after_dh_auto_test:
+	rm -rf rustls/sslkeylogfile.txt
 
-# 跳过测试
-override_dh_auto_test:
-	@echo "Skipping tests for OBS build"
-
-# 标准清理
-override_dh_auto_clean:
-	dh_auto_clean
-	rm -rf target/
-	rm -f Cargo.lock
+# mangle system-shared code to use system-shared test files
+execute_after_dh_auto_install:
+	perl -pi \
+	 -e 's,(?:\.\./)+testdata,/usr/share/rust-rustls/testdata,;' \
+	 -e 's,(?:\.\./)+test-ca,/usr/share/rust-rustls/test-ca,;' \
+	 -e 's,(?:\.\./)+fuzz,/usr/share/rust-rustls/fuzz,;' \
+	 $(addprefix debian/librust-*-dev/usr/share/cargo/registry/*/,\
+	  $(shell cd rustls && grep -rl '\.\./\(fuzz\|test\)'))
