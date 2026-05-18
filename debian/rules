@@ -9,6 +9,8 @@ export RUSTFLAGS := -A unexpected-cfgs
 
 # ===================== 核心修复：删除损坏的 Cargo.lock + 纯 Stage-1 构建 =====================
 override_dh_auto_build:
+	# dh-rust 把 control 里的 Rust 依赖链接到本地 Cargo registry
+	dh_rust
 	# 强制离线构建 + 无锁文件校验（OBS/chroot 专用）
 	cargo build --release \
 		--lib \
